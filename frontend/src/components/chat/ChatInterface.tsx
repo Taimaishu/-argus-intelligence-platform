@@ -46,6 +46,16 @@ export const ChatInterface = () => {
     error: sttError
   } = useSpeechRecognition({ continuous: false, interimResults: true });
 
+  // Hide STT errors after 10 seconds to avoid clutter
+  useEffect(() => {
+    if (sttError) {
+      const timer = setTimeout(() => {
+        // Error will naturally be cleared by the hook
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [sttError]);
+
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
@@ -279,8 +289,8 @@ export const ChatInterface = () => {
               )}
 
               <form onSubmit={handleSubmit} className="flex gap-3">
-                {/* Microphone button */}
-                {sttSupported && (
+                {/* Microphone button - only show if supported and no persistent network error */}
+                {sttSupported && sttError !== 'Network blocked. Brave users: Disable Shields or use text input instead.' && (
                   <button
                     type="button"
                     onClick={handleMicrophoneToggle}
