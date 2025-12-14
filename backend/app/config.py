@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # Ollama Configuration
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_EMBEDDING_MODEL: str = "llama3.2:1b"
-    OLLAMA_LLM_MODEL: str = "llama3:8b"
+    OLLAMA_LLM_MODEL: str = "gurubot/llama3-guru-uncensored:latest"
 
     # OpenAI API
     OPENAI_API_KEY: str = Field(default="")
