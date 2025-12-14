@@ -26,7 +26,9 @@ chat_service = ChatService()
 )
 def create_chat_session(request: ChatSessionCreate, db: Session = Depends(get_db)):
     """Create a new chat session."""
-    session = chat_service.create_session(db, title=request.title)
+    session = chat_service.create_session(
+        db, title=request.title, system_prompt=request.system_prompt
+    )
     return session
 
 
@@ -53,8 +55,10 @@ def get_chat_session(session_id: int, db: Session = Depends(get_db)):
 def update_chat_session(
     session_id: int, request: ChatSessionCreate, db: Session = Depends(get_db)
 ):
-    """Update a chat session title."""
-    session = chat_service.update_session(db, session_id, title=request.title)
+    """Update a chat session title and/or system prompt."""
+    session = chat_service.update_session(
+        db, session_id, title=request.title, system_prompt=request.system_prompt
+    )
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

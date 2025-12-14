@@ -195,6 +195,7 @@ class ChatSession(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False, default="New Chat")
+    system_prompt = Column(Text, nullable=True)  # Custom system prompt for this session
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

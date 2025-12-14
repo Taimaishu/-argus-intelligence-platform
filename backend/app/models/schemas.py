@@ -118,6 +118,7 @@ class ChatSessionResponse(BaseModel):
 
     id: int
     title: str
+    system_prompt: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     messages: List[ChatMessageResponse] = []
@@ -130,6 +131,7 @@ class ChatSessionCreate(BaseModel):
     """Schema for creating a chat session."""
 
     title: str = "New Chat"
+    system_prompt: Optional[str] = None
 
 
 class ChatMessageRequest(BaseModel):

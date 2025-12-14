@@ -17,9 +17,11 @@ class ChatService:
         self.multi_provider = MultiProviderChat()
         self.content_extractor = ContentExtractor()
 
-    def create_session(self, db: Session, title: str = "New Chat") -> ChatSession:
+    def create_session(
+        self, db: Session, title: str = "New Chat", system_prompt: Optional[str] = None
+    ) -> ChatSession:
         """Create a new chat session."""
-        session = ChatSession(title=title)
+        session = ChatSession(title=title, system_prompt=system_prompt)
         db.add(session)
         db.commit()
         db.refresh(session)
@@ -39,13 +41,20 @@ class ChatService:
         )
 
     def update_session(
-        self, db: Session, session_id: int, title: str
+        self,
+        db: Session,
+        session_id: int,
+        title: Optional[str] = None,
+        system_prompt: Optional[str] = None,
     ) -> Optional[ChatSession]:
-        """Update a chat session title."""
+        """Update a chat session title and/or system prompt."""
         session = self.get_session(db, session_id)
         if not session:
             return None
-        session.title = title
+        if title is not None:
+            session.title = title
+        if system_prompt is not None:
+            session.system_prompt = system_prompt
         db.commit()
         db.refresh(session)
         return session
@@ -134,7 +143,11 @@ class ChatService:
             messages = []
 
             # System message with context
-            system_prompt = """You are a research assistant helping with document analysis and investigation.
+            # Use custom system prompt if set, otherwise use default
+            if session.system_prompt:
+                system_prompt = session.system_prompt
+            else:
+                system_prompt = """You are a research assistant helping with document analysis and investigation.
 You help users brainstorm theories, find connections between documents, and explore research topics.
 Be concise, insightful, and focused on helping the user discover patterns and insights.
 
