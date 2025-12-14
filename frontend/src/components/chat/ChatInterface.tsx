@@ -59,7 +59,7 @@ export const ChatInterface = () => {
   return (
     <div className="flex h-[calc(100vh-12rem)] gap-6">
       {/* Sidebar - Session list */}
-      <div className="w-80 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-5 overflow-y-auto shadow-lg backdrop-blur-sm">
+      <div className="w-96 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 overflow-y-auto shadow-lg backdrop-blur-sm">
         <button
           onClick={handleNewChat}
           className="w-full mb-6 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium"
