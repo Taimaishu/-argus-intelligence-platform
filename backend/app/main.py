@@ -8,6 +8,7 @@ from app.config import settings
 from app.database import init_db
 from app.api.routes import documents, health, search, chat, osint, canvas, patterns, models
 from app.utils.logger import logger
+from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 
 
 @asynccontextmanager
@@ -47,6 +48,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add security middlewares
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, calls=100, period=60)  # 100 requests per minute
 
 # Include routers
 app.include_router(health.router)
