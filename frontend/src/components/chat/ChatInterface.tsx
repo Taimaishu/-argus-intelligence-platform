@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker, Pencil, Check } from 'lucide-react';
+import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker, Pencil, Check, Pause, Play } from 'lucide-react';
 import { useChatStore } from '../../store/useChatStore';
 import { ModelSelector } from './ModelSelector';
 import { useTTS } from '../../hooks/useTTS';
@@ -31,7 +31,7 @@ export const ChatInterface = () => {
   } = useChatStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isEnabled, isSpeaking, speak, speakAlways, stop, toggle } = useTTS();
+  const { isEnabled, isSpeaking, isPaused, speed, setSpeed, speak, speakAlways, stop, pause, resume, toggle } = useTTS();
   const lastMessageIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -188,30 +188,73 @@ export const ChatInterface = () => {
             onModelChange={setModel}
           />
 
-          {/* TTS Toggle */}
-          <button
-            onClick={toggle}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 font-medium
-              ${isEnabled
-                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-2 border-blue-300 dark:border-blue-700'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }
-            `}
-            title={isEnabled ? 'Disable text-to-speech' : 'Enable text-to-speech'}
-          >
-            {isEnabled ? (
+          {/* TTS Controls */}
+          <div className="flex items-center gap-3">
+            {/* TTS Toggle */}
+            <button
+              onClick={toggle}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 font-medium
+                ${isEnabled
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-2 border-blue-300 dark:border-blue-700'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }
+              `}
+              title={isEnabled ? 'Disable text-to-speech' : 'Enable text-to-speech'}
+            >
+              {isEnabled ? (
+                <>
+                  <Volume2 className="w-5 h-5" />
+                  <span className="text-sm">TTS On</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-5 h-5" />
+                  <span className="text-sm">TTS Off</span>
+                </>
+              )}
+            </button>
+
+            {/* Speed Selector */}
+            {isEnabled && (
               <>
-                <Volume2 className="w-5 h-5" />
-                <span className="text-sm">TTS On</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-5 h-5" />
-                <span className="text-sm">TTS Off</span>
+                <select
+                  value={speed}
+                  onChange={(e) => setSpeed(Number(e.target.value))}
+                  className="px-3 py-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  title="Playback speed"
+                >
+                  <option value="0.75">0.75x</option>
+                  <option value="1.0">1.0x</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="1.75">1.75x</option>
+                  <option value="2.0">2.0x</option>
+                </select>
+
+                {/* Pause/Resume Button */}
+                {isSpeaking ? (
+                  <button
+                    onClick={pause}
+                    className="flex items-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-all duration-300 font-medium"
+                    title="Pause playback"
+                  >
+                    <Pause className="w-4 h-4" />
+                    <span className="text-sm">Pause</span>
+                  </button>
+                ) : isPaused ? (
+                  <button
+                    onClick={resume}
+                    className="flex items-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-2 border-green-300 dark:border-green-700 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-all duration-300 font-medium"
+                    title="Resume playback"
+                  >
+                    <Play className="w-4 h-4" />
+                    <span className="text-sm">Resume</span>
+                  </button>
+                ) : null}
               </>
             )}
-          </button>
+          </div>
         </div>
 
         {!currentSession ? (

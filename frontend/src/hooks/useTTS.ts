@@ -21,6 +21,8 @@ export const useTTS = (options: UseTTSOptions = {}) => {
 
   const [isEnabled, setIsEnabled] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [speed, setSpeed] = useState(1.25); // Default to 1.25x speed
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const speakAlways = useCallback(async (text: string) => {
@@ -37,7 +39,8 @@ export const useTTS = (options: UseTTSOptions = {}) => {
     try {
       console.log('🎤 Requesting TTS from backend...', {
         textLength: text.length,
-        textPreview: text.substring(0, 50) + '...'
+        textPreview: text.substring(0, 50) + '...',
+        speed: speed
       });
 
       // Stop any currently playing audio
@@ -47,6 +50,7 @@ export const useTTS = (options: UseTTSOptions = {}) => {
       }
 
       setIsSpeaking(true);
+      setIsPaused(false);
 
       // Call backend TTS API
       const response = await fetch(`${API_URL}/tts/speak`, {
@@ -57,7 +61,7 @@ export const useTTS = (options: UseTTSOptions = {}) => {
         body: JSON.stringify({
           text,
           lang,
-          slow: false
+          speed
         })
       });
 
@@ -101,7 +105,7 @@ export const useTTS = (options: UseTTSOptions = {}) => {
       setIsSpeaking(false);
       alert(`TTS failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, [lang]);
+  }, [lang, speed]);
 
   const speak = useCallback(async (text: string) => {
     if (!isEnabled) return;
@@ -111,9 +115,27 @@ export const useTTS = (options: UseTTSOptions = {}) => {
   const stop = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       audioRef.current = null;
     }
     setIsSpeaking(false);
+    setIsPaused(false);
+  }, []);
+
+  const pause = useCallback(() => {
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsSpeaking(false);
+      setIsPaused(true);
+    }
+  }, []);
+
+  const resume = useCallback(() => {
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play();
+      setIsSpeaking(true);
+      setIsPaused(false);
+    }
   }, []);
 
   const toggle = useCallback(() => {
@@ -126,6 +148,9 @@ export const useTTS = (options: UseTTSOptions = {}) => {
   return {
     isEnabled,
     isSpeaking,
+    isPaused,
+    speed,
+    setSpeed,
     voices: [], // Not used with backend TTS
     selectedVoice: null, // Not used with backend TTS
     setSelectedVoice: () => {}, // Not used with backend TTS
@@ -133,6 +158,8 @@ export const useTTS = (options: UseTTSOptions = {}) => {
     speak,
     speakAlways,
     stop,
+    pause,
+    resume,
     toggle,
   };
 };
