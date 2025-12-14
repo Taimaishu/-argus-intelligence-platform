@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker, Pencil, Check, Pause, Play } from 'lucide-react';
+import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker, Pencil, Check, Pause, Play, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import { useChatStore } from '../../store/useChatStore';
 import { ModelSelector } from './ModelSelector';
 import { useTTS } from '../../hooks/useTTS';
@@ -13,6 +13,8 @@ export const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+  const [systemPromptValue, setSystemPromptValue] = useState('');
   const {
     sessions,
     currentSession,
@@ -37,6 +39,13 @@ export const ChatInterface = () => {
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
+
+  // Sync system prompt value when session changes
+  useEffect(() => {
+    if (currentSession) {
+      setSystemPromptValue(currentSession.system_prompt || '');
+    }
+  }, [currentSession]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -94,6 +103,12 @@ export const ChatInterface = () => {
   const handleCancelEdit = () => {
     setEditingSessionId(null);
     setEditingTitle('');
+  };
+
+  const handleSaveSystemPrompt = async () => {
+    if (currentSession) {
+      await updateSession(currentSession.id, currentSession.title, systemPromptValue);
+    }
   };
 
   return (
@@ -267,6 +282,57 @@ export const ChatInterface = () => {
           </div>
         ) : (
           <>
+            {/* System Prompt Editor */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowSystemPrompt(!showSystemPrompt)}
+                className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <span className="font-medium text-gray-700 dark:text-gray-300">System Prompt</span>
+                  {systemPromptValue && (
+                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                      Custom
+                    </span>
+                  )}
+                </div>
+                {showSystemPrompt ? (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </button>
+
+              {showSystemPrompt && (
+                <div className="px-6 pb-4 space-y-3">
+                  <textarea
+                    value={systemPromptValue}
+                    onChange={(e) => setSystemPromptValue(e.target.value)}
+                    placeholder="Enter custom system prompt to control the AI's behavior for this chat session. Leave empty to use default."
+                    className="w-full h-32 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveSystemPrompt}
+                      className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSystemPromptValue('');
+                        handleSaveSystemPrompt();
+                      }}
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {error && (
