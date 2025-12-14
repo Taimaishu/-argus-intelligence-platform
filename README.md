@@ -4,6 +4,64 @@
 
 Argus is a privacy-focused, local-first intelligence platform that combines document analysis, semantic search, OSINT capabilities, and AI-powered pattern recognition for comprehensive investigations.
 
+## What Makes This an Investigation Monster?
+
+**For Security Researchers & Red Teamers:**
+- Collect and analyze threat intelligence reports, CVE databases, and exploit documentation
+- Extract and track IOCs (IPs, domains, hashes) automatically from hundreds of documents
+- Map attack infrastructure and actor relationships on the visual canvas
+- Find connections between seemingly unrelated security incidents using AI pattern recognition
+- Scrape and archive threat actor forums, paste sites, and dark web content
+- Build comprehensive threat actor profiles by clustering related documents and artifacts
+
+**For Digital Investigators & OSINT Analysts:**
+- Upload leaked documents, chat logs, emails, and PDFs - search across everything instantly
+- Automatically extract entities: email addresses, phone numbers, cryptocurrency addresses, social media handles
+- Use Shodan/VirusTotal integration to investigate suspicious infrastructure
+- Track individuals across multiple documents using semantic search ("show me everything mentioning this person's alias")
+- Build evidence timelines and relationship maps on the interactive canvas
+- Archive websites at different points in time using Wayback Machine integration
+- Enumerate subdomains and track infrastructure changes
+
+**For Conspiracy Researchers & Political Analysts:**
+- Dump hundreds of news articles, PDFs, and leaked documents into one searchable library
+- Ask questions like "What connections exist between these organizations?" and let AI find patterns you missed
+- Build visual maps connecting people, companies, and events using the canvas
+- Track narratives and disinformation campaigns by clustering similar documents into themes
+- Find related articles across your entire archive using semantic similarity (not just keyword matching)
+- Chat with an AI that has context from all your documents to brainstorm theories and connections
+- Store everything locally - no cloud, no data collection, complete privacy for sensitive research
+
+**For Journalists & Researchers Going Down Rabbit Holes:**
+- Organize massive document leaks (WikiLeaks-style) and find the needles in the haystack
+- AI-powered pattern recognition reveals document clusters and hidden themes automatically
+- Network analysis shows which documents are "central" (most connected) to your investigation
+- Semantic search finds conceptually similar content even when exact keywords differ
+- Build evidence boards with the visual canvas - map out complex conspiracies and timelines
+- Extract structured data from unstructured sources automatically
+- Keep detailed notes and insights linked directly to source documents
+
+**The Privacy Advantage:**
+- **100% Local Processing**: Everything runs on your machine - documents never leave your system
+- **No Cloud Dependencies**: Use local Ollama models for AI features (no OpenAI/Anthropic required)
+- **Encrypted Storage**: Your research stays private and secure
+- **Air-Gap Capable**: Works completely offline after initial setup
+- **No Telemetry**: Zero tracking, zero data collection, zero corporate surveillance
+
+**Real-World Investigation Scenarios:**
+
+1. **Tracking a Disinformation Campaign**: Upload 500 articles, use clustering to identify narrative themes, extract entities to map actor networks, build timeline on canvas
+
+2. **Investigating Crypto Scams**: Feed in blockchain explorer data, Telegram logs, website archives - AI finds wallet addresses and connections between "unrelated" projects
+
+3. **Political Corruption Research**: Dump legislative documents, news archives, leaked emails - semantic search finds hidden connections, pattern detection reveals coordination
+
+4. **Cybersecurity Incident Response**: Collect IOCs from 100 threat reports, auto-extract all IPs/domains, cross-reference with Shodan/VirusTotal, map infrastructure on canvas
+
+5. **Whistleblower Document Analysis**: Process massive document dumps, find key evidence with semantic search, protect sources with local-only processing
+
+**This isn't just a document viewer - it's a complete investigation workbench that thinks like you do, but at machine speed across thousands of documents simultaneously.**
+
 ## Features
 
 ### 🔍 Document Intelligence
