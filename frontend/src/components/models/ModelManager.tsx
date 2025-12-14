@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { Download, Trash2, Loader2, RefreshCw, HardDrive } from 'lucide-react';
+import { getApiUrl } from '../../config/api';
 
 interface OllamaModel {
   name: string;
@@ -32,7 +33,7 @@ export const ModelManager = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/models/ollama/list');
+      const response = await fetch(getApiUrl('/api/models/ollama/list'));
       if (!response.ok) throw new Error('Failed to fetch models');
 
       const data = await response.json();
@@ -56,7 +57,7 @@ export const ModelManager = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/models/ollama/pull', {
+      const response = await fetch(getApiUrl('/api/models/ollama/pull'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model_name: pullModel.trim() }),
@@ -81,7 +82,7 @@ export const ModelManager = () => {
     if (!confirm(`Delete ${modelName}?`)) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/models/ollama/${encodeURIComponent(modelName)}`, {
+      const response = await fetch(getApiUrl(`/api/models/ollama/${encodeURIComponent(modelName)}`), {
         method: 'DELETE',
       });
 

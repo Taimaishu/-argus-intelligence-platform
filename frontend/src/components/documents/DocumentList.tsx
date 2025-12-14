@@ -36,17 +36,20 @@ export const DocumentList = () => {
 
   useEffect(() => {
     fetchDocuments();
+  }, []); // Only fetch on mount
 
+  useEffect(() => {
     // Auto-refresh for processing documents
+    const hasProcessing = documents.some(doc => doc.processing_status === 'processing');
+
+    if (!hasProcessing) return;
+
     const interval = setInterval(() => {
-      const hasProcessing = documents.some(doc => doc.processing_status === 'processing');
-      if (hasProcessing) {
-        fetchDocuments();
-      }
+      fetchDocuments();
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [fetchDocuments, documents]);
+  }, [documents, fetchDocuments]); // Separate effect for auto-refresh
 
   const handleDelete = async (id: number, filename: string) => {
     if (confirm(`Delete "${filename}"?`)) {

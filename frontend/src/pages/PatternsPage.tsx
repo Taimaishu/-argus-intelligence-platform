@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Network, Users, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
+import { getApiUrl } from '../config/api';
 
 interface NetworkAnalysis {
   central_documents: Array<{
@@ -56,7 +57,7 @@ export const PatternsPage = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/patterns/network');
+      const response = await fetch(getApiUrl('/api/patterns/network'));
       if (!response.ok) throw new Error('Failed to fetch network analysis');
 
       const data = await response.json();
@@ -74,7 +75,7 @@ export const PatternsPage = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/patterns/cluster', {
+      const response = await fetch(getApiUrl('/api/patterns/cluster'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),

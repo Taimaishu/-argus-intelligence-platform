@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { Network, TrendingUp, Users, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { getApiUrl } from '../../config/api';
 
 interface SimilarDocument {
   document_id: number;
@@ -50,7 +51,7 @@ export const PatternInsights = ({ documentId }: PatternInsightsProps) => {
       setError(null);
 
       try {
-        const response = await fetch(`http://localhost:8000/api/patterns/insights/${documentId}`);
+        const response = await fetch(getApiUrl(`/api/patterns/insights/${documentId}`));
         if (!response.ok) throw new Error('Failed to fetch insights');
 
         const data = await response.json();

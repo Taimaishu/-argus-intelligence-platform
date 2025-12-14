@@ -5,14 +5,34 @@
 import axios from 'axios';
 import type { Document, SearchResponse, UploadResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use relative URL for development (Vite proxy) or absolute URL from env var
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
+
+// Add response interceptor for better error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', {
+      message: error.message,
+      config: {
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        method: error.config?.method,
+      },
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return Promise.reject(error);
+  }
+);
 
 // Documents API
 export const documentsApi = {

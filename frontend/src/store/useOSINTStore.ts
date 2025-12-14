@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { getApiUrl } from '../config/api';
 
 export interface Artifact {
   id: number;
@@ -41,7 +42,7 @@ interface OSINTStore {
   fetchStats: () => Promise<void>;
 }
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = getApiUrl('/api');
 
 export const useOSINTStore = create<OSINTStore>((set) => ({
   artifacts: [],

@@ -51,7 +51,9 @@ app.add_middleware(
 
 # Add security middlewares
 app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RateLimitMiddleware, calls=100, period=60)  # 100 requests per minute
+# More relaxed rate limit for development (1000 requests per minute)
+# For production, reduce this to 100 requests per minute
+app.add_middleware(RateLimitMiddleware, calls=1000, period=60)
 
 # Include routers
 app.include_router(health.router)

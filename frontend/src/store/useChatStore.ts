@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { getApiUrl } from '../config/api';
 
 export interface ChatMessage {
   id: number;
@@ -39,7 +40,7 @@ interface ChatStore {
   setModel: (model: string | null) => void;
 }
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = getApiUrl('/api');
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   sessions: [],

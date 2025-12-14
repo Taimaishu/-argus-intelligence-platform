@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Globe, Loader2, Mail, Phone, Hash, Code, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
+import { getApiUrl } from '../../config/api';
 
 export const WebScraper = () => {
   const [url, setUrl] = useState('');
@@ -21,7 +22,7 @@ export const WebScraper = () => {
     setResult(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/osint/scrape', {
+      const response = await fetch(getApiUrl('/api/osint/scrape'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() })

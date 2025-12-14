@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bot, Sparkles, Settings } from 'lucide-react';
+import { getApiUrl } from '../../config/api';
 
 interface ModelSelectorProps {
   provider: string;
@@ -42,7 +43,7 @@ export const ModelSelector = ({
 
   const fetchProviderStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/models/providers/status');
+      const response = await fetch(getApiUrl('/api/models/providers/status'));
       const data = await response.json();
       setProviderStatus(data);
     } catch (err) {
@@ -52,7 +53,7 @@ export const ModelSelector = ({
 
   const fetchOllamaModels = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/models/ollama/list');
+      const response = await fetch(getApiUrl('/api/models/ollama/list'));
       const data = await response.json();
       setOllamaModels(data.models?.map((m: any) => m.name) || []);
     } catch (err) {

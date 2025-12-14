@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import type { Node, Edge, NodeChange, EdgeChange } from 'reactflow';
+import { getApiUrl } from '../config/api';
 
 interface CanvasState {
   nodes: Node[];
@@ -29,7 +30,7 @@ interface CanvasState {
   clearCanvas: () => Promise<void>;
 }
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = getApiUrl('/api');
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
   nodes: [],
