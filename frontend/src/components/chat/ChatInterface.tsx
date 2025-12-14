@@ -135,20 +135,20 @@ export const ChatInterface = () => {
           New Chat
         </button>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {sessions.map(session => (
             <div
               key={session.id}
               onClick={() => selectSession(session.id)}
               className={`
-                p-4 rounded-xl cursor-pointer flex items-center justify-between group transition-all duration-300
+                px-5 py-4 rounded-xl cursor-pointer flex items-center justify-between group transition-all duration-300
                 ${currentSession?.id === session.id
                   ? 'bg-blue-600 dark:bg-blue-700 border-2 border-blue-500 dark:border-blue-600 shadow-lg'
                   : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border-2 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
                 }
               `}
             >
-              <span className={`text-sm font-semibold truncate flex-1 ${
+              <span className={`text-base font-semibold truncate flex-1 ${
                 currentSession?.id === session.id
                   ? 'text-white'
                   : 'text-gray-900 dark:text-gray-100'
