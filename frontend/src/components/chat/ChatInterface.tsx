@@ -143,19 +143,31 @@ export const ChatInterface = () => {
               className={`
                 p-4 rounded-xl cursor-pointer flex items-center justify-between group transition-all duration-300
                 ${currentSession?.id === session.id
-                  ? 'bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 border-2 border-blue-300 dark:border-blue-700 shadow-md scale-105'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 border-2 border-transparent hover:scale-102'
+                  ? 'bg-blue-600 dark:bg-blue-700 border-2 border-blue-500 dark:border-blue-600 shadow-lg'
+                  : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border-2 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md'
                 }
               `}
             >
-              <span className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
+              <span className={`text-sm font-semibold truncate flex-1 ${
+                currentSession?.id === session.id
+                  ? 'text-white'
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}>
                 {session.title}
               </span>
               <button
                 onClick={(e) => handleDeleteSession(session.id, e)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all ${
+                  currentSession?.id === session.id
+                    ? 'hover:bg-blue-700 dark:hover:bg-blue-800'
+                    : 'hover:bg-red-50 dark:hover:bg-red-900/30'
+                }`}
               >
-                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <Trash2 className={`w-4 h-4 ${
+                  currentSession?.id === session.id
+                    ? 'text-white'
+                    : 'text-red-600 dark:text-red-400'
+                }`} />
               </button>
             </div>
           ))}
