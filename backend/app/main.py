@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.database import init_db
-from app.api.routes import documents, health, search, chat, osint, canvas, patterns
+from app.api.routes import documents, health, search, chat, osint, canvas, patterns, models
 from app.utils.logger import logger
 
 
@@ -56,6 +56,7 @@ app.include_router(chat.router, prefix="/api")
 app.include_router(osint.router, prefix="/api")
 app.include_router(canvas.router, prefix="/api")
 app.include_router(patterns.router, prefix="/api")
+app.include_router(models.router, prefix="/api")
 
 
 @app.get("/")

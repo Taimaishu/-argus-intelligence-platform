@@ -1,20 +1,19 @@
-"""Chat service with Ollama integration."""
+"""Chat service with multi-provider support."""
 
 from typing import AsyncGenerator, List, Optional
-import ollama
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..models.database_models import ChatSession, ChatMessage, Document, DocumentChunk
 from ..utils.logger import logger
+from .multi_provider_chat import MultiProviderChat
 
 
 class ChatService:
-    """Service for managing chat interactions with Ollama."""
+    """Service for managing chat interactions with multiple AI providers."""
 
     def __init__(self):
-        self.model_name = settings.OLLAMA_LLM_MODEL
-        self.base_url = settings.OLLAMA_BASE_URL
+        self.multi_provider = MultiProviderChat()
 
     def create_session(self, db: Session, title: str = "New Chat") -> ChatSession:
         """Create a new chat session."""
@@ -59,19 +58,23 @@ class ChatService:
         db: Session,
         session_id: int,
         message: str,
-        include_document_context: bool = True
+        include_document_context: bool = True,
+        provider: str = "ollama",
+        model: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """
-        Stream chat responses from Ollama.
+        Stream chat responses from the specified AI provider.
 
         Args:
             db: Database session
             session_id: Chat session ID
             message: User message
             include_document_context: Whether to include document context in system prompt
+            provider: AI provider ('ollama', 'openai', 'anthropic')
+            model: Model name (uses default if None)
 
         Yields:
-            Response chunks as they arrive from Ollama
+            Response chunks as they arrive from the provider
         """
         # Get chat session
         session = self.get_session(db, session_id)
@@ -114,27 +117,21 @@ Be concise, insightful, and focused on helping the user discover patterns and in
                         "content": msg.content
                     })
 
-            logger.info(f"Streaming chat with Ollama model: {self.model_name}")
+            logger.info(f"Streaming chat - Provider: {provider}, Model: {model or 'default'}")
 
-            # Stream response from Ollama
+            # Stream response from selected provider
             full_response = ""
-            stream = ollama.chat(
-                model=self.model_name,
-                messages=messages,
-                stream=True
-            )
-
-            for chunk in stream:
-                content = chunk['message']['content']
-                full_response += content
-                yield content
+            async for chunk in self.multi_provider.chat_stream(messages, provider, model):
+                full_response += chunk
+                yield chunk
 
             # Save assistant response
+            model_used = model or f"{provider}-default"
             assistant_msg = ChatMessage(
                 session_id=session_id,
                 role="assistant",
                 content=full_response,
-                model=self.model_name
+                model=model_used
             )
             db.add(assistant_msg)
             db.commit()

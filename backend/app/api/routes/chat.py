@@ -98,6 +98,8 @@ async def send_chat_message(
                 db=db,
                 session_id=session_id,
                 message=request.message,
+                provider=request.provider,
+                model=request.model,
                 include_document_context=request.include_context
             ):
                 yield f"data: {chunk}\n\n"

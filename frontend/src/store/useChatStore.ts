@@ -26,6 +26,8 @@ interface ChatStore {
   loading: boolean;
   streaming: boolean;
   error: string | null;
+  provider: string;
+  model: string | null;
 
   // Actions
   fetchSessions: () => Promise<void>;
@@ -33,6 +35,8 @@ interface ChatStore {
   selectSession: (sessionId: number) => Promise<void>;
   deleteSession: (sessionId: number) => Promise<void>;
   sendMessage: (message: string, includeContext?: boolean) => Promise<void>;
+  setProvider: (provider: string) => void;
+  setModel: (model: string | null) => void;
 }
 
 const API_URL = 'http://localhost:8000/api';
@@ -43,6 +47,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   loading: false,
   streaming: false,
   error: null,
+  provider: 'ollama',
+  model: null,
 
   fetchSessions: async () => {
     set({ loading: true, error: null });
@@ -115,7 +121,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   sendMessage: async (message: string, includeContext = true) => {
-    const { currentSession } = get();
+    const { currentSession, provider, model } = get();
     if (!currentSession) {
       set({ error: 'No active session' });
       return;
@@ -146,7 +152,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, include_context: includeContext })
+          body: JSON.stringify({
+            message,
+            include_context: includeContext,
+            provider,
+            model
+          })
         }
       );
 
@@ -215,5 +226,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         streaming: false
       });
     }
+  },
+
+  setProvider: (provider: string) => {
+    set({ provider });
+  },
+
+  setModel: (model: string | null) => {
+    set({ model });
   }
 }));

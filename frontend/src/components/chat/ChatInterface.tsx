@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Send, Loader2, Bot, User, Plus, Trash2 } from 'lucide-react';
 import { useChatStore } from '../../store/useChatStore';
+import { ModelSelector } from './ModelSelector';
 
 export const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
@@ -14,11 +15,15 @@ export const ChatInterface = () => {
     currentSession,
     streaming,
     error,
+    provider,
+    model,
     fetchSessions,
     createSession,
     selectSession,
     deleteSession,
-    sendMessage
+    sendMessage,
+    setProvider,
+    setModel
   } = useChatStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,6 +97,14 @@ export const ChatInterface = () => {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg backdrop-blur-sm">
+        {/* Model Selector */}
+        <ModelSelector
+          provider={provider}
+          model={model}
+          onProviderChange={setProvider}
+          onModelChange={setModel}
+        />
+
         {!currentSession ? (
           <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
             <div className="text-center">

@@ -123,6 +123,8 @@ class ChatMessageRequest(BaseModel):
     """Schema for sending a chat message."""
     message: str = Field(..., min_length=1, max_length=5000)
     include_context: bool = True
+    provider: str = "ollama"  # ollama, openai, anthropic
+    model: Optional[str] = None  # If None, uses default for provider
 
 
 class ChatSessionListResponse(BaseModel):
