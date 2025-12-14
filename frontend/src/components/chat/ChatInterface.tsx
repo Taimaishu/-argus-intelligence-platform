@@ -9,6 +9,7 @@ import { useChatStore } from '../../store/useChatStore';
 import { ModelSelector } from './ModelSelector';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+import { BrowserCompatibilityAlert } from './BrowserCompatibilityAlert';
 
 export const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
@@ -173,6 +174,8 @@ export const ChatInterface = () => {
           <>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {/* Browser compatibility alert */}
+              <BrowserCompatibilityAlert />
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-800 dark:text-red-400">
                   {error}
