@@ -29,7 +29,12 @@ class ChatService:
 
     def list_sessions(self, db: Session, limit: int = 50) -> List[ChatSession]:
         """List all chat sessions."""
-        return db.query(ChatSession).order_by(ChatSession.updated_at.desc()).limit(limit).all()
+        return (
+            db.query(ChatSession)
+            .order_by(ChatSession.updated_at.desc())
+            .limit(limit)
+            .all()
+        )
 
     def delete_session(self, db: Session, session_id: int) -> bool:
         """Delete a chat session."""
@@ -42,7 +47,12 @@ class ChatService:
 
     def get_document_context(self, db: Session, num_docs: int = 5) -> str:
         """Get recent document context for chat."""
-        documents = db.query(Document).order_by(Document.upload_date.desc()).limit(num_docs).all()
+        documents = (
+            db.query(Document)
+            .order_by(Document.upload_date.desc())
+            .limit(num_docs)
+            .all()
+        )
 
         if not documents:
             return "No documents uploaded yet."
@@ -60,7 +70,7 @@ class ChatService:
         message: str,
         include_document_context: bool = True,
         provider: str = "ollama",
-        model: Optional[str] = None
+        model: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """
         Stream chat responses from the specified AI provider.
@@ -83,11 +93,7 @@ class ChatService:
             return
 
         # Save user message
-        user_msg = ChatMessage(
-            session_id=session_id,
-            role="user",
-            content=message
-        )
+        user_msg = ChatMessage(session_id=session_id, role="user", content=message)
         db.add(user_msg)
         db.commit()
 
@@ -104,24 +110,22 @@ Be concise, insightful, and focused on helping the user discover patterns and in
                 doc_context = self.get_document_context(db, num_docs=10)
                 system_prompt += f"\n\n{doc_context}"
 
-            messages.append({
-                "role": "system",
-                "content": system_prompt
-            })
+            messages.append({"role": "system", "content": system_prompt})
 
             # Add conversation history (last 10 messages)
             for msg in session.messages[-10:]:
-                if msg.role in ['user', 'assistant']:
-                    messages.append({
-                        "role": msg.role,
-                        "content": msg.content
-                    })
+                if msg.role in ["user", "assistant"]:
+                    messages.append({"role": msg.role, "content": msg.content})
 
-            logger.info(f"Streaming chat - Provider: {provider}, Model: {model or 'default'}")
+            logger.info(
+                f"Streaming chat - Provider: {provider}, Model: {model or 'default'}"
+            )
 
             # Stream response from selected provider
             full_response = ""
-            async for chunk in self.multi_provider.chat_stream(messages, provider, model):
+            async for chunk in self.multi_provider.chat_stream(
+                messages, provider, model
+            ):
                 full_response += chunk
                 yield chunk
 
@@ -131,7 +135,7 @@ Be concise, insightful, and focused on helping the user discover patterns and in
                 session_id=session_id,
                 role="assistant",
                 content=full_response,
-                model=model_used
+                model=model_used,
             )
             db.add(assistant_msg)
             db.commit()

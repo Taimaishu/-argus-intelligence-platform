@@ -15,18 +15,21 @@ router = APIRouter(tags=["patterns"])
 # Schemas
 class SimilarityRequest(BaseModel):
     """Request for finding similar documents."""
+
     document_id: int
     top_k: int = 5
 
 
 class ConnectionsRequest(BaseModel):
     """Request for suggesting connections."""
+
     document_id: int
     threshold: Optional[float] = None
 
 
 class ClusterRequest(BaseModel):
     """Request for document clustering."""
+
     n_clusters: Optional[int] = None
 
 
@@ -42,15 +45,13 @@ def find_similar_documents(request: SimilarityRequest, db: Session = Depends(get
     pattern_detector = PatternDetector(vector_store)
 
     similar_docs = pattern_detector.detect_similar_documents(
-        document_id=request.document_id,
-        db=db,
-        top_k=request.top_k
+        document_id=request.document_id, db=db, top_k=request.top_k
     )
 
     return {
         "document_id": request.document_id,
         "similar_documents": similar_docs,
-        "count": len(similar_docs)
+        "count": len(similar_docs),
     }
 
 
@@ -65,15 +66,13 @@ def suggest_connections(request: ConnectionsRequest, db: Session = Depends(get_d
     pattern_detector = PatternDetector(vector_store)
 
     connections = pattern_detector.suggest_connections(
-        document_id=request.document_id,
-        db=db,
-        threshold=request.threshold
+        document_id=request.document_id, db=db, threshold=request.threshold
     )
 
     return {
         "document_id": request.document_id,
         "connections": connections,
-        "count": len(connections)
+        "count": len(connections),
     }
 
 
@@ -89,8 +88,7 @@ def cluster_documents(request: ClusterRequest, db: Session = Depends(get_db)):
         pattern_detector = PatternDetector(vector_store)
 
         result = pattern_detector.cluster_documents(
-            db=db,
-            n_clusters=request.n_clusters
+            db=db, n_clusters=request.n_clusters
         )
 
         if "error" in result:
@@ -99,12 +97,7 @@ def cluster_documents(request: ClusterRequest, db: Session = Depends(get_db)):
         return result
     except Exception as e:
         # Return empty result instead of 500 error
-        return {
-            "clusters": [],
-            "themes": [],
-            "total_documents": 0,
-            "n_clusters": 0
-        }
+        return {"clusters": [], "themes": [], "total_documents": 0, "n_clusters": 0}
 
 
 @router.get("/patterns/network")
@@ -131,7 +124,7 @@ def analyze_network(db: Session = Depends(get_db)):
             "isolated_documents": [],
             "network_density": 0.0,
             "total_connections": 0,
-            "total_documents": 0
+            "total_documents": 0,
         }
 
 
@@ -147,16 +140,11 @@ def get_document_insights(document_id: int, db: Session = Depends(get_db)):
 
     # Get similar documents
     similar_docs = pattern_detector.detect_similar_documents(
-        document_id=document_id,
-        db=db,
-        top_k=5
+        document_id=document_id, db=db, top_k=5
     )
 
     # Get connection suggestions
-    connections = pattern_detector.suggest_connections(
-        document_id=document_id,
-        db=db
-    )
+    connections = pattern_detector.suggest_connections(document_id=document_id, db=db)
 
     # Get clustering info
     clusters = pattern_detector.cluster_documents(db=db)
@@ -168,11 +156,14 @@ def get_document_insights(document_id: int, db: Session = Depends(get_db)):
             document_cluster = {
                 "cluster_id": cluster["cluster_id"],
                 "theme": next(
-                    (t["theme_name"] for t in clusters.get("themes", [])
-                     if t["cluster_id"] == cluster["cluster_id"]),
-                    f"Cluster {cluster['cluster_id']}"
+                    (
+                        t["theme_name"]
+                        for t in clusters.get("themes", [])
+                        if t["cluster_id"] == cluster["cluster_id"]
+                    ),
+                    f"Cluster {cluster['cluster_id']}",
                 ),
-                "size": cluster["size"]
+                "size": cluster["size"],
             }
             break
 
@@ -182,5 +173,5 @@ def get_document_insights(document_id: int, db: Session = Depends(get_db)):
         "suggested_connections": connections,
         "cluster_membership": document_cluster,
         "total_similar": len(similar_docs),
-        "total_connections": len(connections)
+        "total_connections": len(connections),
     }

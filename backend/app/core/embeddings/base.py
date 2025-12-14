@@ -8,6 +8,7 @@ from typing import List, Optional
 @dataclass
 class EmbeddingResult:
     """Result from embedding generation."""
+
     embedding: List[float]
     model: str
     dimension: int

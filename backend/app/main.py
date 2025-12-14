@@ -6,7 +6,16 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.database import init_db
-from app.api.routes import documents, health, search, chat, osint, canvas, patterns, models
+from app.api.routes import (
+    documents,
+    health,
+    search,
+    chat,
+    osint,
+    canvas,
+    patterns,
+    models,
+)
 from app.utils.logger import logger
 from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 
@@ -37,7 +46,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -73,15 +82,11 @@ def root():
         "message": "Argus Intelligence Platform API",
         "version": "1.0.0",
         "tagline": "All-Seeing Intelligence",
-        "docs": "/docs"
+        "docs": "/docs",
     }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=settings.DEBUG
-    )
+
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)

@@ -43,15 +43,14 @@ class XLSXParser(BaseParser):
                 for row in sheet.iter_rows(values_only=True):
                     # Skip empty rows
                     if any(cell is not None for cell in row):
-                        row_text = " | ".join(str(cell) if cell is not None else "" for cell in row)
+                        row_text = " | ".join(
+                            str(cell) if cell is not None else "" for cell in row
+                        )
                         rows.append(row_text)
                         sheet_text += row_text + "\n"
 
                 if rows:
-                    sections.append({
-                        "heading": sheet_name,
-                        "content": sheet_text
-                    })
+                    sections.append({"heading": sheet_name, "content": sheet_text})
 
                     full_text += sheet_text + "\n\n"
 
@@ -67,7 +66,7 @@ class XLSXParser(BaseParser):
                     "created": str(props.created) if props.created else None,
                     "modified": str(props.modified) if props.modified else None,
                 },
-                sections=sections
+                sections=sections,
             )
 
         except Exception as e:

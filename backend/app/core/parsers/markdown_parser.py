@@ -67,7 +67,7 @@ class MarkdownParser(BaseParser):
                 title=title,
                 author=author,
                 metadata=metadata,
-                sections=sections
+                sections=sections,
             )
 
         except Exception as e:

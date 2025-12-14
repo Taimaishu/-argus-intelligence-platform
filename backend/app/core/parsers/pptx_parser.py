@@ -48,11 +48,13 @@ class PPTXParser(BaseParser):
                             slide_text += row_text + "\n"
 
                 if slide_text.strip():
-                    sections.append({
-                        "heading": f"Slide {slide_num}",
-                        "content": slide_text,
-                        "page": slide_num
-                    })
+                    sections.append(
+                        {
+                            "heading": f"Slide {slide_num}",
+                            "content": slide_text,
+                            "page": slide_num,
+                        }
+                    )
 
                     full_text += slide_text + "\n\n"
 
@@ -63,11 +65,13 @@ class PPTXParser(BaseParser):
                 metadata={
                     "slide_count": len(prs.slides),
                     "created": str(core_props.created) if core_props.created else None,
-                    "modified": str(core_props.modified) if core_props.modified else None,
+                    "modified": (
+                        str(core_props.modified) if core_props.modified else None
+                    ),
                     "subject": core_props.subject,
                 },
                 sections=sections,
-                page_count=len(prs.slides)
+                page_count=len(prs.slides),
             )
 
         except Exception as e:

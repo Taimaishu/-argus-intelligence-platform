@@ -29,8 +29,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         now = datetime.now()
         cutoff = now - timedelta(seconds=self.period)
         self.clients[client_ip] = [
-            req_time for req_time in self.clients[client_ip]
-            if req_time > cutoff
+            req_time for req_time in self.clients[client_ip] if req_time > cutoff
         ]
 
         # Check rate limit
@@ -39,8 +38,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=429,
                 content={
                     "detail": "Rate limit exceeded. Please try again later.",
-                    "retry_after": self.period
-                }
+                    "retry_after": self.period,
+                },
             )
 
         # Record this request
@@ -60,9 +59,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
         response.headers["Referrer-Policy"] = "no-referrer-when-downgrade"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), microphone=(), camera=()"
+        )
 
         return response
 
@@ -89,7 +92,7 @@ def sanitize_input(text: str, max_length: int = 5000) -> str:
         raise ValueError(f"Input exceeds maximum length of {max_length}")
 
     # Remove null bytes
-    text = text.replace('\x00', '')
+    text = text.replace("\x00", "")
 
     # Check for SQL injection patterns
     sql_patterns = [
@@ -119,7 +122,9 @@ def sanitize_input(text: str, max_length: int = 5000) -> str:
     return text
 
 
-def validate_file_upload(filename: str, content_type: str, max_size_mb: int = 50) -> None:
+def validate_file_upload(
+    filename: str, content_type: str, max_size_mb: int = 50
+) -> None:
     """
     Validate file uploads.
 
@@ -137,28 +142,44 @@ def validate_file_upload(filename: str, content_type: str, max_size_mb: int = 50
 
     # Allowed extensions
     allowed_extensions = {
-        '.pdf', '.docx', '.xlsx', '.pptx', '.md', '.txt',
-        '.py', '.js', '.ts', '.java', '.cpp', '.c', '.go', '.rs'
+        ".pdf",
+        ".docx",
+        ".xlsx",
+        ".pptx",
+        ".md",
+        ".txt",
+        ".py",
+        ".js",
+        ".ts",
+        ".java",
+        ".cpp",
+        ".c",
+        ".go",
+        ".rs",
     }
 
     # Check extension
-    ext = '.' + filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext not in allowed_extensions:
         raise ValueError(f"File type not allowed: {ext}")
 
     # Check for path traversal
-    if '..' in filename or '/' in filename or '\\' in filename:
+    if ".." in filename or "/" in filename or "\\" in filename:
         raise ValueError("Invalid filename: path traversal detected")
 
     # Validate MIME type
     allowed_mimes = {
-        'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain',
-        'text/markdown',
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain",
+        "text/markdown",
     }
 
-    if content_type and content_type not in allowed_mimes and not content_type.startswith('text/'):
+    if (
+        content_type
+        and content_type not in allowed_mimes
+        and not content_type.startswith("text/")
+    ):
         raise ValueError(f"MIME type not allowed: {content_type}")

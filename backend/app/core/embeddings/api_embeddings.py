@@ -31,17 +31,12 @@ class OpenAIEmbeddingService(BaseEmbedding):
     def embed_text(self, text: str) -> EmbeddingResult:
         """Generate embedding for a single text."""
         try:
-            response = self.client.embeddings.create(
-                model=self.model_name,
-                input=text
-            )
+            response = self.client.embeddings.create(model=self.model_name, input=text)
 
             embedding = response.data[0].embedding
 
             return EmbeddingResult(
-                embedding=embedding,
-                model=self.model_name,
-                dimension=len(embedding)
+                embedding=embedding, model=self.model_name, dimension=len(embedding)
             )
         except Exception as e:
             logger.error(f"Failed to generate OpenAI embedding: {str(e)}")
@@ -51,16 +46,13 @@ class OpenAIEmbeddingService(BaseEmbedding):
         """Generate embeddings for multiple texts."""
         try:
             # OpenAI supports batch embeddings
-            response = self.client.embeddings.create(
-                model=self.model_name,
-                input=texts
-            )
+            response = self.client.embeddings.create(model=self.model_name, input=texts)
 
             return [
                 EmbeddingResult(
                     embedding=item.embedding,
                     model=self.model_name,
-                    dimension=len(item.embedding)
+                    dimension=len(item.embedding),
                 )
                 for item in response.data
             ]
@@ -86,8 +78,11 @@ class AnthropicEmbeddingService(BaseEmbedding):
 
     def __init__(self):
         """Initialize Anthropic embedding service."""
-        logger.warning("Anthropic doesn't provide native embeddings. Using local fallback.")
+        logger.warning(
+            "Anthropic doesn't provide native embeddings. Using local fallback."
+        )
         from .local_embeddings import LocalEmbeddingService
+
         self.fallback = LocalEmbeddingService()
 
     def embed_text(self, text: str) -> EmbeddingResult:

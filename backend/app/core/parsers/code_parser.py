@@ -11,10 +11,37 @@ class CodeParser(BaseParser):
     """Parser for code files."""
 
     SUPPORTED_EXTENSIONS = {
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".java", ".cpp", ".c", ".h",
-        ".cs", ".go", ".rs", ".rb", ".php", ".swift", ".kt", ".scala",
-        ".r", ".sql", ".sh", ".bash", ".zsh", ".yaml", ".yml", ".json",
-        ".xml", ".html", ".css", ".scss", ".sass", ".less"
+        ".py",
+        ".js",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".cs",
+        ".go",
+        ".rs",
+        ".rb",
+        ".php",
+        ".swift",
+        ".kt",
+        ".scala",
+        ".r",
+        ".sql",
+        ".sh",
+        ".bash",
+        ".zsh",
+        ".yaml",
+        ".yml",
+        ".json",
+        ".xml",
+        ".html",
+        ".css",
+        ".scss",
+        ".sass",
+        ".less",
     }
 
     def supports_file_type(self, file_extension: str) -> bool:
@@ -65,7 +92,7 @@ class CodeParser(BaseParser):
                     "extension": file_path_obj.suffix,
                     "line_count": len(code.splitlines()),
                 },
-                sections=sections
+                sections=sections,
             )
 
         except Exception as e:
@@ -92,9 +119,13 @@ class CodeParser(BaseParser):
             stripped = line.strip()
 
             # Python/JavaScript/TypeScript functions and classes
-            if stripped.startswith("def ") or stripped.startswith("function ") or \
-               stripped.startswith("class ") or stripped.startswith("async def ") or \
-               stripped.startswith("async function "):
+            if (
+                stripped.startswith("def ")
+                or stripped.startswith("function ")
+                or stripped.startswith("class ")
+                or stripped.startswith("async def ")
+                or stripped.startswith("async function ")
+            ):
 
                 # Extract function/class name
                 parts = stripped.split("(")[0].split()
@@ -107,7 +138,7 @@ class CodeParser(BaseParser):
                     current_section = {
                         "heading": f"{parts[0].title()}: {name}",
                         "content": line,
-                        "line_number": i
+                        "line_number": i,
                     }
             elif current_section:
                 current_section["content"] += "\n" + line
@@ -118,9 +149,6 @@ class CodeParser(BaseParser):
 
         # If no structure found, treat whole file as one section
         if not sections:
-            sections.append({
-                "heading": "Code",
-                "content": code
-            })
+            sections.append({"heading": "Code", "content": code})
 
         return sections

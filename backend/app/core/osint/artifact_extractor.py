@@ -10,16 +10,16 @@ class ArtifactExtractor:
 
     # Regex patterns for different artifact types
     PATTERNS = {
-        "ip_address": r'\b(?:\d{1,3}\.){3}\d{1,3}\b',
-        "email": r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b',
-        "domain": r'\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b',
-        "url": r'https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&/=]*)',
-        "md5": r'\b[a-fA-F0-9]{32}\b',
-        "sha1": r'\b[a-fA-F0-9]{40}\b',
-        "sha256": r'\b[a-fA-F0-9]{64}\b',
-        "cve": r'CVE-\d{4}-\d{4,7}',
-        "bitcoin": r'\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b',
-        "ethereum": r'\b0x[a-fA-F0-9]{40}\b',
+        "ip_address": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+        "email": r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b",
+        "domain": r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b",
+        "url": r"https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&/=]*)",
+        "md5": r"\b[a-fA-F0-9]{32}\b",
+        "sha1": r"\b[a-fA-F0-9]{40}\b",
+        "sha256": r"\b[a-fA-F0-9]{64}\b",
+        "cve": r"CVE-\d{4}-\d{4,7}",
+        "bitcoin": r"\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b",
+        "ethereum": r"\b0x[a-fA-F0-9]{40}\b",
     }
 
     def extract_all(self, text: str) -> Dict[str, List[str]]:
@@ -77,7 +77,7 @@ class ArtifactExtractor:
         valid_ips = []
 
         for ip in ips:
-            parts = ip.split('.')
+            parts = ip.split(".")
             if len(parts) != 4:
                 continue
 
@@ -109,19 +109,31 @@ class ArtifactExtractor:
 
         # Common file extensions to exclude
         exclude_extensions = {
-            'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx',
-            'xls', 'xlsx', 'zip', 'rar', 'exe', 'dll', 'txt'
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "pdf",
+            "doc",
+            "docx",
+            "xls",
+            "xlsx",
+            "zip",
+            "rar",
+            "exe",
+            "dll",
+            "txt",
         }
 
         for domain in domains:
             # Skip if it's likely a file
-            if '.' in domain:
-                ext = domain.split('.')[-1].lower()
+            if "." in domain:
+                ext = domain.split(".")[-1].lower()
                 if ext in exclude_extensions:
                     continue
 
             # Must have at least one dot
-            if '.' not in domain:
+            if "." not in domain:
                 continue
 
             # Skip very short domains
@@ -138,18 +150,20 @@ class ArtifactExtractor:
 
         for email in emails:
             # Basic validation
-            if '@' not in email or '.' not in email:
+            if "@" not in email or "." not in email:
                 continue
 
             # Check for common false positives
-            if email.endswith('.png') or email.endswith('.jpg'):
+            if email.endswith(".png") or email.endswith(".jpg"):
                 continue
 
             valid_emails.append(email.lower())
 
         return valid_emails
 
-    def extract_from_document(self, document_text: str, document_id: int) -> Dict[str, Any]:
+    def extract_from_document(
+        self, document_text: str, document_id: int
+    ) -> Dict[str, Any]:
         """
         Extract artifacts from a document and prepare for database storage.
 
@@ -160,11 +174,7 @@ class ArtifactExtractor:
         Returns:
             Dictionary with extracted artifacts organized by type
         """
-        result = {
-            "document_id": document_id,
-            "artifacts": {},
-            "summary": {}
-        }
+        result = {"document_id": document_id, "artifacts": {}, "summary": {}}
 
         # Extract all artifact types
         artifacts = self.extract_all(document_text)
@@ -172,24 +182,21 @@ class ArtifactExtractor:
         # Organize results
         for artifact_type, values in artifacts.items():
             result["artifacts"][artifact_type] = [
-                {
-                    "value": value,
-                    "type": artifact_type,
-                    "document_id": document_id
-                }
+                {"value": value, "type": artifact_type, "document_id": document_id}
                 for value in values
             ]
 
         # Create summary
         result["summary"] = {
-            artifact_type: len(values)
-            for artifact_type, values in artifacts.items()
+            artifact_type: len(values) for artifact_type, values in artifacts.items()
         }
 
         total_artifacts = sum(result["summary"].values())
         result["summary"]["total"] = total_artifacts
 
-        logger.info(f"Extracted {total_artifacts} artifacts from document {document_id}")
+        logger.info(
+            f"Extracted {total_artifacts} artifacts from document {document_id}"
+        )
 
         return result
 

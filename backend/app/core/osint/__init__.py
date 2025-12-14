@@ -11,5 +11,5 @@ __all__ = [
     "HashIntelligenceService",
     "EmailIntelligenceService",
     "ArtifactExtractor",
-    "WebScraperService"
+    "WebScraperService",
 ]

@@ -51,7 +51,7 @@ class LocalEmbeddingService(BaseEmbedding):
             return EmbeddingResult(
                 embedding=embedding.tolist(),
                 model=self.model_name,
-                dimension=self.dimension
+                dimension=self.dimension,
             )
         except Exception as e:
             logger.error(f"Failed to generate embedding: {str(e)}")
@@ -70,16 +70,14 @@ class LocalEmbeddingService(BaseEmbedding):
         try:
             # Batch encode for efficiency
             embeddings = self.model.encode(
-                texts,
-                convert_to_numpy=True,
-                show_progress_bar=len(texts) > 10
+                texts, convert_to_numpy=True, show_progress_bar=len(texts) > 10
             )
 
             return [
                 EmbeddingResult(
                     embedding=emb.tolist(),
                     model=self.model_name,
-                    dimension=self.dimension
+                    dimension=self.dimension,
                 )
                 for emb in embeddings
             ]

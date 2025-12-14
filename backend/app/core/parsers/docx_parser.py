@@ -72,10 +72,12 @@ class DOCXParser(BaseParser):
                 metadata={
                     "subject": core_props.subject,
                     "created": str(core_props.created) if core_props.created else None,
-                    "modified": str(core_props.modified) if core_props.modified else None,
+                    "modified": (
+                        str(core_props.modified) if core_props.modified else None
+                    ),
                     "keywords": core_props.keywords,
                 },
-                sections=sections
+                sections=sections,
             )
 
         except Exception as e:

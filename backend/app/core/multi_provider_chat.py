@@ -24,21 +24,15 @@ class MultiProviderChat:
             self.anthropic_client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
     async def chat_stream_ollama(
-        self,
-        messages: list,
-        model: str
+        self, messages: list, model: str
     ) -> AsyncGenerator[str, None]:
         """Stream chat responses from Ollama."""
         try:
-            stream = ollama.chat(
-                model=model,
-                messages=messages,
-                stream=True
-            )
+            stream = ollama.chat(model=model, messages=messages, stream=True)
 
             for chunk in stream:
-                if 'message' in chunk and 'content' in chunk['message']:
-                    content = chunk['message']['content']
+                if "message" in chunk and "content" in chunk["message"]:
+                    content = chunk["message"]["content"]
                     if content:
                         yield content
 
@@ -47,9 +41,7 @@ class MultiProviderChat:
             yield f"\n\nError: {str(e)}"
 
     async def chat_stream_openai(
-        self,
-        messages: list,
-        model: str
+        self, messages: list, model: str
     ) -> AsyncGenerator[str, None]:
         """Stream chat responses from OpenAI."""
         if not self.openai_client:
@@ -58,10 +50,7 @@ class MultiProviderChat:
 
         try:
             stream = await self.openai_client.chat.completions.create(
-                model=model,
-                messages=messages,
-                stream=True,
-                temperature=0.7
+                model=model, messages=messages, stream=True, temperature=0.7
             )
 
             async for chunk in stream:
@@ -73,9 +62,7 @@ class MultiProviderChat:
             yield f"\n\nError: {str(e)}"
 
     async def chat_stream_anthropic(
-        self,
-        messages: list,
-        model: str
+        self, messages: list, model: str
     ) -> AsyncGenerator[str, None]:
         """Stream chat responses from Anthropic Claude."""
         if not self.anthropic_client:
@@ -88,19 +75,18 @@ class MultiProviderChat:
             converted_messages = []
 
             for msg in messages:
-                if msg['role'] == 'system':
-                    system_message = msg['content']
+                if msg["role"] == "system":
+                    system_message = msg["content"]
                 else:
-                    converted_messages.append({
-                        "role": msg['role'],
-                        "content": msg['content']
-                    })
+                    converted_messages.append(
+                        {"role": msg["role"], "content": msg["content"]}
+                    )
 
             kwargs = {
                 "model": model,
                 "messages": converted_messages,
                 "max_tokens": 4096,
-                "stream": True
+                "stream": True,
             }
 
             if system_message:
@@ -115,10 +101,7 @@ class MultiProviderChat:
             yield f"\n\nError: {str(e)}"
 
     async def chat_stream(
-        self,
-        messages: list,
-        provider: str = "ollama",
-        model: Optional[str] = None
+        self, messages: list, provider: str = "ollama", model: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """
         Stream chat responses from the specified provider.

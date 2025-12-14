@@ -54,8 +54,8 @@ def generate_unique_filename(original_filename: str) -> str:
 
     # Clean original filename (remove extension and special chars)
     clean_name = os.path.splitext(original_filename)[0]
-    clean_name = "".join(c for c in clean_name if c.isalnum() or c in (' ', '-', '_'))
-    clean_name = clean_name.replace(' ', '_')[:50]  # Limit length
+    clean_name = "".join(c for c in clean_name if c.isalnum() or c in (" ", "-", "_"))
+    clean_name = clean_name.replace(" ", "_")[:50]  # Limit length
 
     return f"{clean_name}_{unique_id}{ext}"
 

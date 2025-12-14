@@ -27,7 +27,7 @@ class OSINTService:
         db: Session,
         artifact_type: str,
         value: str,
-        document_id: Optional[int] = None
+        document_id: Optional[int] = None,
     ) -> Artifact:
         """
         Analyze an artifact and store results in database.
@@ -42,10 +42,14 @@ class OSINTService:
             Artifact database object with analysis results
         """
         # Check if artifact already exists
-        existing = db.query(Artifact).filter(
-            Artifact.artifact_type == ArtifactType[artifact_type.upper()],
-            Artifact.value == value
-        ).first()
+        existing = (
+            db.query(Artifact)
+            .filter(
+                Artifact.artifact_type == ArtifactType[artifact_type.upper()],
+                Artifact.value == value,
+            )
+            .first()
+        )
 
         if existing:
             # Update existing artifact
@@ -58,7 +62,7 @@ class OSINTService:
                 value=value,
                 document_id=document_id,
                 analysis_status=AnalysisStatus.ANALYZING,
-                extracted=0 if document_id is None else 1
+                extracted=0 if document_id is None else 1,
             )
             db.add(artifact)
             db.commit()
@@ -93,7 +97,9 @@ class OSINTService:
                 db.commit()
                 db.refresh(artifact)
 
-                logger.info(f"Analyzed {artifact_type}: {value} - Threat: {threat_level_str}")
+                logger.info(
+                    f"Analyzed {artifact_type}: {value} - Threat: {threat_level_str}"
+                )
 
         except Exception as e:
             logger.error(f"Error analyzing artifact {value}: {e}")
@@ -105,10 +111,7 @@ class OSINTService:
         return artifact
 
     def extract_and_analyze_document(
-        self,
-        db: Session,
-        document_id: int,
-        document_text: str
+        self, db: Session, document_id: int, document_text: str
     ) -> Dict[str, Any]:
         """
         Extract artifacts from document and analyze them.
@@ -125,24 +128,28 @@ class OSINTService:
             "document_id": document_id,
             "extracted_count": 0,
             "analyzed_count": 0,
-            "artifacts": []
+            "artifacts": [],
         }
 
         try:
             # Extract artifacts
             extraction_result = self.extractor.extract_from_document(
-                document_text,
-                document_id
+                document_text, document_id
             )
 
             # Store and analyze each artifact
             for artifact_type, artifacts_list in extraction_result["artifacts"].items():
                 for artifact_data in artifacts_list:
                     # Check if already exists
-                    existing = db.query(Artifact).filter(
-                        Artifact.value == artifact_data["value"],
-                        Artifact.artifact_type == ArtifactType[artifact_type.upper()]
-                    ).first()
+                    existing = (
+                        db.query(Artifact)
+                        .filter(
+                            Artifact.value == artifact_data["value"],
+                            Artifact.artifact_type
+                            == ArtifactType[artifact_type.upper()],
+                        )
+                        .first()
+                    )
 
                     if not existing:
                         # Create artifact
@@ -150,15 +157,17 @@ class OSINTService:
                             db=db,
                             artifact_type=artifact_type,
                             value=artifact_data["value"],
-                            document_id=document_id
+                            document_id=document_id,
                         )
 
-                        result["artifacts"].append({
-                            "id": artifact.id,
-                            "type": artifact_type,
-                            "value": artifact.value,
-                            "threat_level": artifact.threat_level.value
-                        })
+                        result["artifacts"].append(
+                            {
+                                "id": artifact.id,
+                                "type": artifact_type,
+                                "value": artifact.value,
+                                "threat_level": artifact.threat_level.value,
+                            }
+                        )
 
                         result["extracted_count"] += 1
                         if artifact.analysis_status == AnalysisStatus.COMPLETED:
@@ -180,7 +189,7 @@ class OSINTService:
         db: Session,
         artifact_type: Optional[str] = None,
         threat_level: Optional[str] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[Artifact]:
         """
         Get artifacts from database with optional filtering.
@@ -197,10 +206,14 @@ class OSINTService:
         query = db.query(Artifact)
 
         if artifact_type:
-            query = query.filter(Artifact.artifact_type == ArtifactType[artifact_type.upper()])
+            query = query.filter(
+                Artifact.artifact_type == ArtifactType[artifact_type.upper()]
+            )
 
         if threat_level:
-            query = query.filter(Artifact.threat_level == ThreatLevel[threat_level.upper()])
+            query = query.filter(
+                Artifact.threat_level == ThreatLevel[threat_level.upper()]
+            )
 
         query = query.order_by(Artifact.first_seen.desc()).limit(limit)
 
@@ -226,10 +239,11 @@ class OSINTService:
             return False
 
         # Check if tag already exists
-        existing = db.query(ArtifactTag).filter(
-            ArtifactTag.artifact_id == artifact_id,
-            ArtifactTag.tag == tag
-        ).first()
+        existing = (
+            db.query(ArtifactTag)
+            .filter(ArtifactTag.artifact_id == artifact_id, ArtifactTag.tag == tag)
+            .first()
+        )
 
         if not existing:
             artifact_tag = ArtifactTag(artifact_id=artifact_id, tag=tag)
@@ -245,21 +259,23 @@ class OSINTService:
         # Count by type
         by_type = {}
         for artifact_type in ArtifactType:
-            count = db.query(Artifact).filter(
-                Artifact.artifact_type == artifact_type
-            ).count()
+            count = (
+                db.query(Artifact)
+                .filter(Artifact.artifact_type == artifact_type)
+                .count()
+            )
             by_type[artifact_type.value] = count
 
         # Count by threat level
         by_threat = {}
         for threat_level in ThreatLevel:
-            count = db.query(Artifact).filter(
-                Artifact.threat_level == threat_level
-            ).count()
+            count = (
+                db.query(Artifact).filter(Artifact.threat_level == threat_level).count()
+            )
             by_threat[threat_level.value] = count
 
         return {
             "total_artifacts": total_artifacts,
             "by_type": by_type,
-            "by_threat_level": by_threat
+            "by_threat_level": by_threat,
         }

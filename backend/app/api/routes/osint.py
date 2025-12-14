@@ -18,12 +18,16 @@ web_scraper = WebScraperService()
 # Request/Response Schemas
 class ArtifactSubmitRequest(BaseModel):
     """Schema for submitting an artifact for analysis."""
-    artifact_type: str = Field(..., description="Type: ip_address, domain, email, hash, url, etc.")
+
+    artifact_type: str = Field(
+        ..., description="Type: ip_address, domain, email, hash, url, etc."
+    )
     value: str = Field(..., description="Artifact value to analyze")
 
 
 class ArtifactResponse(BaseModel):
     """Schema for artifact response."""
+
     id: int
     artifact_type: str
     value: str
@@ -42,12 +46,14 @@ class ArtifactResponse(BaseModel):
 
 class ArtifactListResponse(BaseModel):
     """Schema for list of artifacts."""
+
     artifacts: List[ArtifactResponse]
     total: int
 
 
 class OSINTStatsResponse(BaseModel):
     """Schema for OSINT statistics."""
+
     total_artifacts: int
     by_type: dict
     by_threat_level: dict
@@ -55,21 +61,27 @@ class OSINTStatsResponse(BaseModel):
 
 class ExtractRequest(BaseModel):
     """Schema for extracting artifacts from text."""
+
     text: str = Field(..., description="Text to extract artifacts from")
     document_id: Optional[int] = None
 
 
 class ExtractResponse(BaseModel):
     """Schema for extraction results."""
+
     artifacts: dict
     summary: dict
 
 
-@router.post("/osint/analyze", response_model=ArtifactResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/osint/analyze",
+    response_model=ArtifactResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def analyze_artifact(
     request: ArtifactSubmitRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Submit an artifact for OSINT analysis.
@@ -78,9 +90,7 @@ def analyze_artifact(
     """
     try:
         artifact = osint_service.analyze_artifact(
-            db=db,
-            artifact_type=request.artifact_type,
-            value=request.value
+            db=db, artifact_type=request.artifact_type, value=request.value
         )
 
         return ArtifactResponse(
@@ -91,16 +101,17 @@ def analyze_artifact(
             threat_level=artifact.threat_level.value,
             analysis_data=artifact.analysis_data,
             first_seen=artifact.first_seen.isoformat(),
-            last_analyzed=artifact.last_analyzed.isoformat() if artifact.last_analyzed else None,
+            last_analyzed=(
+                artifact.last_analyzed.isoformat() if artifact.last_analyzed else None
+            ),
             document_id=artifact.document_id,
             extracted=bool(artifact.extracted),
-            notes=artifact.notes
+            notes=artifact.notes,
         )
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Analysis failed: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Analysis failed: {str(e)}"
         )
 
 
@@ -109,7 +120,7 @@ def list_artifacts(
     artifact_type: Optional[str] = None,
     threat_level: Optional[str] = None,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     List artifacts with optional filtering.
@@ -120,10 +131,7 @@ def list_artifacts(
     - limit: Maximum number of results (default: 100)
     """
     artifacts = osint_service.get_artifacts(
-        db=db,
-        artifact_type=artifact_type,
-        threat_level=threat_level,
-        limit=limit
+        db=db, artifact_type=artifact_type, threat_level=threat_level, limit=limit
     )
 
     artifact_responses = [
@@ -138,29 +146,25 @@ def list_artifacts(
             last_analyzed=a.last_analyzed.isoformat() if a.last_analyzed else None,
             document_id=a.document_id,
             extracted=bool(a.extracted),
-            notes=a.notes
+            notes=a.notes,
         )
         for a in artifacts
     ]
 
     return ArtifactListResponse(
-        artifacts=artifact_responses,
-        total=len(artifact_responses)
+        artifacts=artifact_responses, total=len(artifact_responses)
     )
 
 
 @router.get("/osint/artifacts/{artifact_id}", response_model=ArtifactResponse)
-def get_artifact(
-    artifact_id: int,
-    db: Session = Depends(get_db)
-):
+def get_artifact(artifact_id: int, db: Session = Depends(get_db)):
     """Get detailed information about a specific artifact."""
     artifact = osint_service.get_artifact_by_id(db, artifact_id)
 
     if not artifact:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Artifact {artifact_id} not found"
+            detail=f"Artifact {artifact_id} not found",
         )
 
     return ArtifactResponse(
@@ -171,35 +175,31 @@ def get_artifact(
         threat_level=artifact.threat_level.value,
         analysis_data=artifact.analysis_data,
         first_seen=artifact.first_seen.isoformat(),
-        last_analyzed=artifact.last_analyzed.isoformat() if artifact.last_analyzed else None,
+        last_analyzed=(
+            artifact.last_analyzed.isoformat() if artifact.last_analyzed else None
+        ),
         document_id=artifact.document_id,
         extracted=bool(artifact.extracted),
-        notes=artifact.notes
+        notes=artifact.notes,
     )
 
 
 @router.delete("/osint/artifacts/{artifact_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_artifact(
-    artifact_id: int,
-    db: Session = Depends(get_db)
-):
+def delete_artifact(artifact_id: int, db: Session = Depends(get_db)):
     """Delete an artifact."""
     success = osint_service.delete_artifact(db, artifact_id)
 
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Artifact {artifact_id} not found"
+            detail=f"Artifact {artifact_id} not found",
         )
 
     return None
 
 
 @router.post("/osint/extract", response_model=ExtractResponse)
-def extract_artifacts(
-    request: ExtractRequest,
-    db: Session = Depends(get_db)
-):
+def extract_artifacts(request: ExtractRequest, db: Session = Depends(get_db)):
     """
     Extract artifacts from text.
 
@@ -218,23 +218,18 @@ def extract_artifacts(
         summary = {k: len(v) for k, v in result.items()}
         summary["total"] = sum(summary.values())
 
-        return ExtractResponse(
-            artifacts=result,
-            summary=summary
-        )
+        return ExtractResponse(artifacts=result, summary=summary)
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Extraction failed: {str(e)}"
+            detail=f"Extraction failed: {str(e)}",
         )
 
 
 @router.post("/osint/documents/{document_id}/extract")
 def extract_from_document(
-    document_id: int,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    document_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """
     Extract and analyze artifacts from a document.
@@ -251,7 +246,7 @@ def extract_from_document(
     if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Document {document_id} not found"
+            detail=f"Document {document_id} not found",
         )
 
     # Get document text (from chunks)
@@ -260,22 +255,20 @@ def extract_from_document(
     if not document_text:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Document has no text content"
+            detail="Document has no text content",
         )
 
     # Extract and analyze (in background)
     def process_extraction():
         osint_service.extract_and_analyze_document(
-            db=db,
-            document_id=document_id,
-            document_text=document_text
+            db=db, document_id=document_id, document_text=document_text
         )
 
     background_tasks.add_task(process_extraction)
 
     return {
         "message": f"Extraction started for document {document_id}",
-        "document_id": document_id
+        "document_id": document_id,
     }
 
 
@@ -287,23 +280,19 @@ def get_osint_stats(db: Session = Depends(get_db)):
     return OSINTStatsResponse(
         total_artifacts=stats["total_artifacts"],
         by_type=stats["by_type"],
-        by_threat_level=stats["by_threat_level"]
+        by_threat_level=stats["by_threat_level"],
     )
 
 
 @router.post("/osint/artifacts/{artifact_id}/tag")
-def add_tag(
-    artifact_id: int,
-    tag: str,
-    db: Session = Depends(get_db)
-):
+def add_tag(artifact_id: int, tag: str, db: Session = Depends(get_db)):
     """Add a tag to an artifact."""
     success = osint_service.add_tag_to_artifact(db, artifact_id, tag)
 
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Artifact {artifact_id} not found"
+            detail=f"Artifact {artifact_id} not found",
         )
 
     return {"message": f"Tag '{tag}' added to artifact {artifact_id}"}
@@ -312,6 +301,7 @@ def add_tag(
 # Web Scraping Endpoints
 class ScrapeRequest(BaseModel):
     """Schema for web scraping request."""
+
     url: str = Field(..., description="URL to scrape")
 
 
@@ -333,8 +323,7 @@ def scrape_website(request: ScrapeRequest):
         return result
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Scraping failed: {str(e)}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Scraping failed: {str(e)}"
         )
 
 
@@ -351,7 +340,7 @@ def check_wayback(url: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Wayback check failed: {str(e)}"
+            detail=f"Wayback check failed: {str(e)}",
         )
 
 
@@ -368,7 +357,7 @@ def get_robots(url: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"robots.txt fetch failed: {str(e)}"
+            detail=f"robots.txt fetch failed: {str(e)}",
         )
 
 
@@ -381,13 +370,9 @@ def discover_subdomains(domain: str):
     """
     try:
         subdomains = web_scraper.extract_subdomains(domain)
-        return {
-            "domain": domain,
-            "subdomains": subdomains,
-            "count": len(subdomains)
-        }
+        return {"domain": domain, "subdomains": subdomains, "count": len(subdomains)}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Subdomain discovery failed: {str(e)}"
+            detail=f"Subdomain discovery failed: {str(e)}",
         )

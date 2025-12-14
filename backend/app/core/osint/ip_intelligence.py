@@ -33,7 +33,7 @@ class IPIntelligenceService:
             "geolocation": {},
             "shodan_data": {},
             "reverse_dns": None,
-            "threat_intel": {}
+            "threat_intel": {},
         }
 
         try:
@@ -54,7 +54,7 @@ class IPIntelligenceService:
                         "latitude": shodan_data.get("latitude"),
                         "longitude": shodan_data.get("longitude"),
                         "org": shodan_data.get("org"),
-                        "isp": shodan_data.get("isp")
+                        "isp": shodan_data.get("isp"),
                     }
 
             # Basic threat assessment
@@ -82,7 +82,7 @@ class IPIntelligenceService:
             "dns_records": {},
             "whois": {},
             "ips": [],
-            "subdomains": []
+            "subdomains": [],
         }
 
         try:
@@ -128,7 +128,7 @@ class IPIntelligenceService:
                     "hostnames": data.get("hostnames", []),
                     "domains": data.get("domains", []),
                     "vulns": data.get("vulns", []),
-                    "tags": data.get("tags", [])
+                    "tags": data.get("tags", []),
                 }
 
             return None
@@ -140,7 +140,7 @@ class IPIntelligenceService:
     def _get_dns_records(self, domain: str) -> Dict[str, list]:
         """Get DNS records for a domain."""
         records = {}
-        record_types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME']
+        record_types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME"]
 
         for record_type in record_types:
             try:
@@ -156,10 +156,7 @@ class IPIntelligenceService:
         try:
             # Using a free WHOIS API
             url = f"https://www.whoisxmlapi.com/whoisserver/WhoisService"
-            params = {
-                "domainName": domain,
-                "outputFormat": "JSON"
-            }
+            params = {"domainName": domain, "outputFormat": "JSON"}
 
             response = requests.get(url, params=params, timeout=10)
             if response.status_code == 200:
@@ -186,15 +183,26 @@ class IPIntelligenceService:
         suspicious_tags = ["malware", "botnet", "tor", "proxy", "scanner"]
         tags = shodan.get("tags", [])
         if any(tag in tags for tag in suspicious_tags):
-            threat_indicators.append(f"Suspicious tags: {', '.join(set(tags) & set(suspicious_tags))}")
+            threat_indicators.append(
+                f"Suspicious tags: {', '.join(set(tags) & set(suspicious_tags))}"
+            )
             threat_level = "medium" if threat_level == "unknown" else threat_level
 
         # Check open ports
         ports = shodan.get("ports", [])
-        suspicious_ports = [23, 445, 1433, 3306, 3389, 5900]  # Telnet, SMB, MSSQL, MySQL, RDP, VNC
+        suspicious_ports = [
+            23,
+            445,
+            1433,
+            3306,
+            3389,
+            5900,
+        ]  # Telnet, SMB, MSSQL, MySQL, RDP, VNC
         open_suspicious = [p for p in ports if p in suspicious_ports]
         if open_suspicious:
-            threat_indicators.append(f"Suspicious open ports: {', '.join(map(str, open_suspicious))}")
+            threat_indicators.append(
+                f"Suspicious open ports: {', '.join(map(str, open_suspicious))}"
+            )
             if threat_level == "unknown":
                 threat_level = "low"
 
@@ -202,7 +210,4 @@ class IPIntelligenceService:
             threat_level = "safe"
             threat_indicators.append("No obvious threats detected")
 
-        return {
-            "level": threat_level,
-            "indicators": threat_indicators
-        }
+        return {"level": threat_level, "indicators": threat_indicators}

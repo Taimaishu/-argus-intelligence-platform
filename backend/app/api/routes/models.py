@@ -14,6 +14,7 @@ router = APIRouter(tags=["models"])
 
 class ModelInfo(BaseModel):
     """Model information."""
+
     name: str
     provider: str
     size: str = "unknown"
@@ -22,11 +23,13 @@ class ModelInfo(BaseModel):
 
 class PullModelRequest(BaseModel):
     """Request to pull an Ollama model."""
+
     model_name: str
 
 
 class ChatModelRequest(BaseModel):
     """Request to set chat model."""
+
     provider: str  # ollama, openai, anthropic
     model_name: str
 
@@ -39,37 +42,20 @@ RECOMMENDED_MODELS = {
             "qwen2.5:14b",
             "deepseek-r1:7b",
             "mistral:7b",
-            "gemma2:9b"
+            "gemma2:9b",
         ],
-        "openai": [
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4-turbo"
-        ],
+        "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"],
         "anthropic": [
             "claude-3-5-sonnet-20241022",
             "claude-3-5-haiku-20241022",
-            "claude-3-opus-20240229"
-        ]
+            "claude-3-opus-20240229",
+        ],
     },
     "embeddings": {
-        "ollama": [
-            "nomic-embed-text",
-            "mxbai-embed-large",
-            "all-minilm"
-        ],
-        "openai": [
-            "text-embedding-3-large",
-            "text-embedding-3-small"
-        ]
+        "ollama": ["nomic-embed-text", "mxbai-embed-large", "all-minilm"],
+        "openai": ["text-embedding-3-large", "text-embedding-3-small"],
     },
-    "code": {
-        "ollama": [
-            "deepseek-coder:6.7b",
-            "codellama:13b",
-            "qwen2.5-coder:7b"
-        ]
-    }
+    "code": {"ollama": ["deepseek-coder:6.7b", "codellama:13b", "qwen2.5-coder:7b"]},
 }
 
 
@@ -80,23 +66,27 @@ def list_ollama_models():
         models_list = ollama.list()
 
         models = []
-        for model in models_list.get('models', []):
-            models.append({
-                "name": model['name'],
-                "provider": "ollama",
-                "size": model.get('size', 'unknown'),
-                "modified": model.get('modified_at', ''),
-                "details": model.get('details', {})
-            })
+        for model in models_list.get("models", []):
+            models.append(
+                {
+                    "name": model["name"],
+                    "provider": "ollama",
+                    "size": model.get("size", "unknown"),
+                    "modified": model.get("modified_at", ""),
+                    "details": model.get("details", {}),
+                }
+            )
 
         return {
             "models": models,
             "count": len(models),
-            "ollama_url": settings.OLLAMA_BASE_URL
+            "ollama_url": settings.OLLAMA_BASE_URL,
         }
     except Exception as e:
         logger.error(f"Error listing Ollama models: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to list Ollama models: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to list Ollama models: {str(e)}"
+        )
 
 
 @router.post("/models/ollama/pull")
@@ -116,20 +106,20 @@ async def pull_ollama_model(request: PullModelRequest):
         progress_info = []
         for chunk in stream:
             progress_info.append(chunk)
-            if 'status' in chunk and chunk['status'] == 'success':
+            if "status" in chunk and chunk["status"] == "success":
                 break
 
         return {
             "success": True,
             "model": request.model_name,
             "message": f"Successfully pulled {request.model_name}",
-            "progress": progress_info[-1] if progress_info else {}
+            "progress": progress_info[-1] if progress_info else {},
         }
     except Exception as e:
         logger.error(f"Error pulling Ollama model {request.model_name}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to pull model {request.model_name}: {str(e)}"
+            detail=f"Failed to pull model {request.model_name}: {str(e)}",
         )
 
 
@@ -139,15 +129,11 @@ def delete_ollama_model(model_name: str):
     try:
         ollama.delete(model_name)
         logger.info(f"Deleted Ollama model: {model_name}")
-        return {
-            "success": True,
-            "message": f"Successfully deleted {model_name}"
-        }
+        return {"success": True, "message": f"Successfully deleted {model_name}"}
     except Exception as e:
         logger.error(f"Error deleting Ollama model {model_name}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete model {model_name}: {str(e)}"
+            status_code=500, detail=f"Failed to delete model {model_name}: {str(e)}"
         )
 
 
@@ -159,8 +145,8 @@ def get_model_recommendations():
         "current_settings": {
             "embedding_provider": settings.DEFAULT_EMBEDDING_PROVIDER,
             "llm_provider": settings.DEFAULT_LLM_PROVIDER,
-            "ollama_url": settings.OLLAMA_BASE_URL
-        }
+            "ollama_url": settings.OLLAMA_BASE_URL,
+        },
     }
 
 
@@ -171,21 +157,19 @@ def get_available_models():
 
     Returns models from Ollama (local) and lists recommended API models.
     """
-    available = {
-        "ollama": [],
-        "openai": [],
-        "anthropic": []
-    }
+    available = {"ollama": [], "openai": [], "anthropic": []}
 
     # Get Ollama models
     try:
         models_list = ollama.list()
-        for model in models_list.get('models', []):
-            available["ollama"].append({
-                "name": model['name'],
-                "size": model.get('size', 'unknown'),
-                "available": True
-            })
+        for model in models_list.get("models", []):
+            available["ollama"].append(
+                {
+                    "name": model["name"],
+                    "size": model.get("size", "unknown"),
+                    "available": True,
+                }
+            )
     except Exception as e:
         logger.warning(f"Could not fetch Ollama models: {e}")
 
@@ -227,12 +211,9 @@ def unload_ollama_model(model_name: str):
         response = requests.post(
             f"{settings.OLLAMA_BASE_URL}/api/generate",
             json={"model": model_name, "keep_alive": 0},
-            timeout=5
+            timeout=5,
         )
-        return {
-            "success": True,
-            "message": f"Unloaded {model_name} from memory"
-        }
+        return {"success": True, "message": f"Unloaded {model_name} from memory"}
     except Exception as e:
         logger.error(f"Error unloading model: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -245,16 +226,21 @@ def get_providers_status():
         "ollama": {
             "available": False,
             "configured": True,
-            "url": settings.OLLAMA_BASE_URL
+            "url": settings.OLLAMA_BASE_URL,
         },
         "openai": {
-            "available": bool(settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your_key_here"),
+            "available": bool(
+                settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your_key_here"
+            ),
             "configured": bool(settings.OPENAI_API_KEY),
         },
         "anthropic": {
-            "available": bool(settings.ANTHROPIC_API_KEY and settings.ANTHROPIC_API_KEY != "your_key_here"),
+            "available": bool(
+                settings.ANTHROPIC_API_KEY
+                and settings.ANTHROPIC_API_KEY != "your_key_here"
+            ),
             "configured": bool(settings.ANTHROPIC_API_KEY),
-        }
+        },
     }
 
     # Check if Ollama is actually running

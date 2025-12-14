@@ -41,9 +41,11 @@ class PatternDetector:
             return []
 
         # Get all chunks for this document
-        chunks = db.query(DocumentChunk).filter(
-            DocumentChunk.document_id == document_id
-        ).all()
+        chunks = (
+            db.query(DocumentChunk)
+            .filter(DocumentChunk.document_id == document_id)
+            .all()
+        )
 
         if not chunks:
             logger.warning(f"No chunks found for document {document_id}")
@@ -67,14 +69,16 @@ class PatternDetector:
             results = collection.query(
                 query_embeddings=query_embedding["embeddings"],
                 n_results=top_k * 5,  # Get more results to filter out same document
-                include=["metadatas", "distances"]
+                include=["metadatas", "distances"],
             )
 
             # Group by document and calculate average similarity
             doc_similarities: Dict[int, List[float]] = {}
             doc_metadata: Dict[int, Dict[str, Any]] = {}
 
-            for metadata, distance in zip(results["metadatas"][0], results["distances"][0]):
+            for metadata, distance in zip(
+                results["metadatas"][0], results["distances"][0]
+            ):
                 other_doc_id = metadata.get("document_id")
                 if other_doc_id == document_id:  # Skip same document
                     continue
@@ -93,12 +97,14 @@ class PatternDetector:
             similar_docs = []
             for doc_id, similarities in doc_similarities.items():
                 avg_similarity = np.mean(similarities)
-                similar_docs.append({
-                    "document_id": doc_id,
-                    "filename": doc_metadata[doc_id].get("filename", "Unknown"),
-                    "similarity": float(avg_similarity),
-                    "matching_chunks": len(similarities)
-                })
+                similar_docs.append(
+                    {
+                        "document_id": doc_id,
+                        "filename": doc_metadata[doc_id].get("filename", "Unknown"),
+                        "similarity": float(avg_similarity),
+                        "matching_chunks": len(similarities),
+                    }
+                )
 
             # Sort by similarity and return top_k
             similar_docs.sort(key=lambda x: x["similarity"], reverse=True)
@@ -123,17 +129,21 @@ class PatternDetector:
         """
         try:
             # Get all documents with embeddings
-            documents = db.query(Document).filter(
-                Document.processing_status == "completed"
-            ).all()
+            documents = (
+                db.query(Document)
+                .filter(Document.processing_status == "completed")
+                .all()
+            )
 
             if len(documents) < self.min_cluster_size:
-                logger.warning(f"Not enough documents to cluster (need at least {self.min_cluster_size})")
+                logger.warning(
+                    f"Not enough documents to cluster (need at least {self.min_cluster_size})"
+                )
                 return {
                     "clusters": [],
                     "themes": [],
                     "total_documents": len(documents),
-                    "n_clusters": 0
+                    "n_clusters": 0,
                 }
 
             # Collect document embeddings
@@ -144,10 +154,15 @@ class PatternDetector:
 
             for doc in documents:
                 # Get first chunk embedding as document representative
-                chunks = db.query(DocumentChunk).filter(
-                    DocumentChunk.document_id == doc.id,
-                    DocumentChunk.embedding_id.isnot(None)
-                ).limit(1).all()
+                chunks = (
+                    db.query(DocumentChunk)
+                    .filter(
+                        DocumentChunk.document_id == doc.id,
+                        DocumentChunk.embedding_id.isnot(None),
+                    )
+                    .limit(1)
+                    .all()
+                )
 
                 if not chunks:
                     continue
@@ -157,11 +172,13 @@ class PatternDetector:
 
                 if result and result["embeddings"]:
                     doc_embeddings.append(result["embeddings"][0])
-                    doc_info.append({
-                        "id": doc.id,
-                        "filename": doc.filename,
-                        "title": doc.title or doc.filename
-                    })
+                    doc_info.append(
+                        {
+                            "id": doc.id,
+                            "filename": doc.filename,
+                            "title": doc.title or doc.filename,
+                        }
+                    )
 
             if len(doc_embeddings) < self.min_cluster_size:
                 logger.warning("Not enough document embeddings for clustering")
@@ -169,14 +186,14 @@ class PatternDetector:
                     "clusters": [],
                     "themes": [],
                     "total_documents": len(doc_embeddings),
-                    "n_clusters": 0
+                    "n_clusters": 0,
                 }
 
             # Determine optimal number of clusters
             if n_clusters is None:
                 n_clusters = min(
                     self.max_clusters,
-                    max(2, len(doc_embeddings) // 3)  # Roughly 3 docs per cluster
+                    max(2, len(doc_embeddings) // 3),  # Roughly 3 docs per cluster
                 )
 
             # Perform K-means clustering
@@ -191,12 +208,14 @@ class PatternDetector:
                 cluster_docs = [doc_info[i] for i in cluster_doc_indices]
 
                 if cluster_docs:
-                    clusters.append({
-                        "cluster_id": int(cluster_id),
-                        "documents": cluster_docs,
-                        "size": len(cluster_docs),
-                        "centroid": kmeans.cluster_centers_[cluster_id].tolist()
-                    })
+                    clusters.append(
+                        {
+                            "cluster_id": int(cluster_id),
+                            "documents": cluster_docs,
+                            "size": len(cluster_docs),
+                            "centroid": kmeans.cluster_centers_[cluster_id].tolist(),
+                        }
+                    )
 
             # Generate theme names based on document titles
             themes = []
@@ -212,25 +231,42 @@ class PatternDetector:
 
                 if words:
                     # Get most common word (excluding common articles)
-                    stop_words = {"the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for"}
-                    filtered_words = [w for w in words if w not in stop_words and len(w) > 3]
+                    stop_words = {
+                        "the",
+                        "a",
+                        "an",
+                        "and",
+                        "or",
+                        "but",
+                        "in",
+                        "on",
+                        "at",
+                        "to",
+                        "for",
+                    }
+                    filtered_words = [
+                        w for w in words if w not in stop_words and len(w) > 3
+                    ]
                     if filtered_words:
                         from collections import Counter
+
                         most_common = Counter(filtered_words).most_common(1)
                         if most_common:
                             theme_name = most_common[0][0].capitalize()
 
-                themes.append({
-                    "cluster_id": cluster["cluster_id"],
-                    "theme_name": theme_name,
-                    "document_count": cluster["size"]
-                })
+                themes.append(
+                    {
+                        "cluster_id": cluster["cluster_id"],
+                        "theme_name": theme_name,
+                        "document_count": cluster["size"],
+                    }
+                )
 
             return {
                 "clusters": clusters,
                 "themes": themes,
                 "total_documents": len(doc_info),
-                "n_clusters": n_clusters
+                "n_clusters": n_clusters,
             }
 
         except Exception as e:
@@ -240,7 +276,7 @@ class PatternDetector:
                 "themes": [],
                 "total_documents": 0,
                 "n_clusters": 0,
-                "error": str(e)
+                "error": str(e),
             }
 
     def suggest_connections(
@@ -266,15 +302,17 @@ class PatternDetector:
         connections = []
         for doc in similar_docs:
             if doc["similarity"] >= threshold:
-                connections.append({
-                    "source_document_id": document_id,
-                    "target_document_id": doc["document_id"],
-                    "connection_type": "semantic_similarity",
-                    "strength": doc["similarity"],
-                    "confidence": "high" if doc["similarity"] > 0.85 else "medium",
-                    "reason": f"Semantic similarity: {doc['similarity']:.2%}",
-                    "matching_chunks": doc["matching_chunks"]
-                })
+                connections.append(
+                    {
+                        "source_document_id": document_id,
+                        "target_document_id": doc["document_id"],
+                        "connection_type": "semantic_similarity",
+                        "strength": doc["similarity"],
+                        "confidence": "high" if doc["similarity"] > 0.85 else "medium",
+                        "reason": f"Semantic similarity: {doc['similarity']:.2%}",
+                        "matching_chunks": doc["matching_chunks"],
+                    }
+                )
 
         return connections
 
@@ -289,9 +327,11 @@ class PatternDetector:
             Network analysis with central documents, clusters, and metrics
         """
         try:
-            documents = db.query(Document).filter(
-                Document.processing_status == "completed"
-            ).all()
+            documents = (
+                db.query(Document)
+                .filter(Document.processing_status == "completed")
+                .all()
+            )
 
             if len(documents) < 2:
                 return {
@@ -299,7 +339,7 @@ class PatternDetector:
                     "isolated_documents": [],
                     "network_density": 0.0,
                     "total_connections": 0,
-                    "total_documents": len(documents)
+                    "total_documents": len(documents),
                 }
 
             # Build similarity matrix
@@ -321,34 +361,39 @@ class PatternDetector:
             central_documents = []
             for idx in central_indices:
                 if centrality[idx] > 0:
-                    central_documents.append({
-                        "document_id": doc_ids[idx],
-                        "filename": documents[idx].filename,
-                        "connections": int(centrality[idx]),
-                        "centrality_score": float(centrality[idx] / n_docs)
-                    })
+                    central_documents.append(
+                        {
+                            "document_id": doc_ids[idx],
+                            "filename": documents[idx].filename,
+                            "connections": int(centrality[idx]),
+                            "centrality_score": float(centrality[idx] / n_docs),
+                        }
+                    )
 
             # Find isolated documents (no connections)
             isolated_indices = np.where(centrality == 0)[0]
             isolated_documents = [
-                {
-                    "document_id": doc_ids[idx],
-                    "filename": documents[idx].filename
-                }
+                {"document_id": doc_ids[idx], "filename": documents[idx].filename}
                 for idx in isolated_indices
             ]
 
             # Calculate network density
             total_possible_connections = n_docs * (n_docs - 1) / 2
-            actual_connections = np.sum(similarity_matrix > self.similarity_threshold) / 2
-            network_density = actual_connections / total_possible_connections if total_possible_connections > 0 else 0
+            actual_connections = (
+                np.sum(similarity_matrix > self.similarity_threshold) / 2
+            )
+            network_density = (
+                actual_connections / total_possible_connections
+                if total_possible_connections > 0
+                else 0
+            )
 
             return {
                 "central_documents": central_documents,
                 "isolated_documents": isolated_documents,
                 "network_density": float(network_density),
                 "total_connections": int(actual_connections),
-                "total_documents": n_docs
+                "total_documents": n_docs,
             }
 
         except Exception as e:
@@ -359,5 +404,5 @@ class PatternDetector:
                 "network_density": 0.0,
                 "total_connections": 0,
                 "total_documents": 0,
-                "error": str(e)
+                "error": str(e),
             }

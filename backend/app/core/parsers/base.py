@@ -13,7 +13,9 @@ class ParsedDocument:
     title: Optional[str] = None
     author: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
-    sections: List[Dict[str, str]] = field(default_factory=list)  # [{"heading": "...", "content": "..."}]
+    sections: List[Dict[str, str]] = field(
+        default_factory=list
+    )  # [{"heading": "...", "content": "..."}]
     page_count: Optional[int] = None
 
 

@@ -5,6 +5,7 @@ from enum import Enum
 
 class DocumentType(str, Enum):
     """Supported document types."""
+
     PDF = "pdf"
     DOCX = "docx"
     XLSX = "xlsx"
@@ -16,6 +17,7 @@ class DocumentType(str, Enum):
 
 class ProcessingStatus(str, Enum):
     """Document processing status."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -24,6 +26,7 @@ class ProcessingStatus(str, Enum):
 
 class NodeType(str, Enum):
     """Canvas node types."""
+
     DOCUMENT = "document"
     INSIGHT = "insight"
     NOTE = "note"
@@ -32,6 +35,7 @@ class NodeType(str, Enum):
 
 class ArtifactType(str, Enum):
     """OSINT artifact types."""
+
     IP_ADDRESS = "ip_address"
     DOMAIN = "domain"
     URL = "url"
@@ -44,6 +48,7 @@ class ArtifactType(str, Enum):
 
 class AnalysisStatus(str, Enum):
     """Artifact analysis status."""
+
     PENDING = "pending"
     ANALYZING = "analyzing"
     COMPLETED = "completed"
@@ -52,6 +57,7 @@ class AnalysisStatus(str, Enum):
 
 class ThreatLevel(str, Enum):
     """Threat level classification."""
+
     SAFE = "safe"
     LOW = "low"
     MEDIUM = "medium"

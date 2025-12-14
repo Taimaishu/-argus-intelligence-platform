@@ -30,7 +30,7 @@ class HashIntelligenceService:
             "timestamp": datetime.utcnow().isoformat(),
             "virustotal": {},
             "threat_level": "unknown",
-            "detections": {}
+            "detections": {},
         }
 
         if not self.vt_api_key:
@@ -55,9 +55,7 @@ class HashIntelligenceService:
         """Perform VirusTotal API lookup."""
         try:
             url = f"{self.vt_base_url}/files/{file_hash}"
-            headers = {
-                "x-apikey": self.vt_api_key
-            }
+            headers = {"x-apikey": self.vt_api_key}
 
             response = requests.get(url, headers=headers, timeout=15)
 
@@ -77,11 +75,14 @@ class HashIntelligenceService:
                     "stats": attributes.get("last_analysis_stats", {}),
                     "results": attributes.get("last_analysis_results", {}),
                     "tags": attributes.get("tags", []),
-                    "reputation": attributes.get("reputation", 0)
+                    "reputation": attributes.get("reputation", 0),
                 }
 
             elif response.status_code == 404:
-                return {"status": "not_found", "message": "Hash not found in VirusTotal database"}
+                return {
+                    "status": "not_found",
+                    "message": "Hash not found in VirusTotal database",
+                }
 
             return None
 
@@ -99,7 +100,9 @@ class HashIntelligenceService:
             "undetected": stats.get("undetected", 0),
             "harmless": stats.get("harmless", 0),
             "total_engines": sum(stats.values()) if stats else 0,
-            "detection_ratio": f"{stats.get('malicious', 0)}/{sum(stats.values())}" if stats else "0/0"
+            "detection_ratio": (
+                f"{stats.get('malicious', 0)}/{sum(stats.values())}" if stats else "0/0"
+            ),
         }
 
     def _assess_threat(self, vt_data: Dict[str, Any]) -> str:
@@ -139,7 +142,7 @@ class HashIntelligenceService:
             "url": url,
             "timestamp": datetime.utcnow().isoformat(),
             "virustotal": {},
-            "threat_level": "unknown"
+            "threat_level": "unknown",
         }
 
         if not self.vt_api_key:
@@ -163,13 +166,12 @@ class HashIntelligenceService:
         """Perform VirusTotal URL lookup."""
         try:
             import base64
+
             # URL ID is base64 encoded URL without padding
             url_id = base64.urlsafe_b64encode(url.encode()).decode().strip("=")
 
             lookup_url = f"{self.vt_base_url}/urls/{url_id}"
-            headers = {
-                "x-apikey": self.vt_api_key
-            }
+            headers = {"x-apikey": self.vt_api_key}
 
             response = requests.get(lookup_url, headers=headers, timeout=15)
 
@@ -184,7 +186,7 @@ class HashIntelligenceService:
                     "stats": attributes.get("last_analysis_stats", {}),
                     "results": attributes.get("last_analysis_results", {}),
                     "reputation": attributes.get("reputation", 0),
-                    "categories": attributes.get("categories", {})
+                    "categories": attributes.get("categories", {}),
                 }
 
             return None

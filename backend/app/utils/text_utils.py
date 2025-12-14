@@ -54,7 +54,7 @@ def chunk_text_by_paragraphs(text: str, chunk_size: int = None) -> List[str]:
     chunk_size = chunk_size or settings.CHUNK_SIZE
 
     # Split by paragraphs (double newlines or single newlines)
-    paragraphs = re.split(r'\n\s*\n', text)
+    paragraphs = re.split(r"\n\s*\n", text)
 
     chunks = []
     current_chunk = []
@@ -105,10 +105,10 @@ def clean_whitespace(text: str) -> str:
         Cleaned text
     """
     # Replace multiple spaces with single space
-    text = re.sub(r' +', ' ', text)
+    text = re.sub(r" +", " ", text)
 
     # Replace multiple newlines with double newline
-    text = re.sub(r'\n\s*\n+', '\n\n', text)
+    text = re.sub(r"\n\s*\n+", "\n\n", text)
 
     return text.strip()
 
@@ -127,7 +127,7 @@ def truncate_text(text: str, max_length: int = 500) -> str:
     if len(text) <= max_length:
         return text
 
-    return text[:max_length].rsplit(' ', 1)[0] + "..."
+    return text[:max_length].rsplit(" ", 1)[0] + "..."
 
 
 def extract_snippet(text: str, query: str, context_length: int = 150) -> str:

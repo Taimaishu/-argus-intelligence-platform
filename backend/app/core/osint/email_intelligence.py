@@ -32,7 +32,7 @@ class EmailIntelligenceService:
             "breaches": [],
             "breach_count": 0,
             "pastes": [],
-            "threat_level": "unknown"
+            "threat_level": "unknown",
         }
 
         try:
@@ -60,7 +60,7 @@ class EmailIntelligenceService:
 
     def _validate_email(self, email: str) -> bool:
         """Validate email format using regex."""
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return bool(re.match(pattern, email))
 
     def _check_breaches(self, email: str) -> Optional[list]:
@@ -73,27 +73,28 @@ class EmailIntelligenceService:
         try:
             # Using the public breach API (limited functionality without API key)
             url = f"{self.hibp_base_url}/breachedaccount/{email}"
-            headers = {
-                "User-Agent": "ResearchTool-OSINT"
-            }
+            headers = {"User-Agent": "ResearchTool-OSINT"}
 
             # Note: This will return 401 without API key, but we'll handle gracefully
             response = requests.get(url, headers=headers, timeout=10)
 
             if response.status_code == 200:
                 breaches = response.json()
-                return [{
-                    "name": breach.get("Name"),
-                    "title": breach.get("Title"),
-                    "domain": breach.get("Domain"),
-                    "breach_date": breach.get("BreachDate"),
-                    "added_date": breach.get("AddedDate"),
-                    "pwn_count": breach.get("PwnCount"),
-                    "description": breach.get("Description", "")[:200],  # Truncate
-                    "data_classes": breach.get("DataClasses", []),
-                    "is_verified": breach.get("IsVerified"),
-                    "is_sensitive": breach.get("IsSensitive")
-                } for breach in breaches]
+                return [
+                    {
+                        "name": breach.get("Name"),
+                        "title": breach.get("Title"),
+                        "domain": breach.get("Domain"),
+                        "breach_date": breach.get("BreachDate"),
+                        "added_date": breach.get("AddedDate"),
+                        "pwn_count": breach.get("PwnCount"),
+                        "description": breach.get("Description", "")[:200],  # Truncate
+                        "data_classes": breach.get("DataClasses", []),
+                        "is_verified": breach.get("IsVerified"),
+                        "is_sensitive": breach.get("IsSensitive"),
+                    }
+                    for breach in breaches
+                ]
 
             elif response.status_code == 404:
                 # No breaches found (good!)
@@ -101,7 +102,11 @@ class EmailIntelligenceService:
 
             elif response.status_code == 401:
                 # API key required for full functionality
-                return [{"note": "HIBP API key required for breach checking. Add to .env file."}]
+                return [
+                    {
+                        "note": "HIBP API key required for breach checking. Add to .env file."
+                    }
+                ]
 
             return None
 
@@ -128,11 +133,11 @@ class EmailIntelligenceService:
             "message_id": None,
             "ip_addresses": [],
             "domains": [],
-            "received_hops": []
+            "received_hops": [],
         }
 
         try:
-            lines = header.split('\n')
+            lines = header.split("\n")
 
             for line in lines:
                 # Extract key headers
@@ -150,11 +155,11 @@ class EmailIntelligenceService:
                     results["received_hops"].append(line.split(":", 1)[1].strip())
 
             # Extract IP addresses from header
-            ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+            ip_pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b"
             results["ip_addresses"] = list(set(re.findall(ip_pattern, header)))
 
             # Extract domains
-            domain_pattern = r'@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+            domain_pattern = r"@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"
             results["domains"] = list(set(re.findall(domain_pattern, header)))
 
         except Exception as e:

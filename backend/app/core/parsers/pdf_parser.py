@@ -41,11 +41,13 @@ class PDFParser(BaseParser):
                     full_text += page_text + "\n\n"
 
                     # Store page as section
-                    sections.append({
-                        "heading": f"Page {page_num}",
-                        "content": page_text,
-                        "page": page_num
-                    })
+                    sections.append(
+                        {
+                            "heading": f"Page {page_num}",
+                            "content": page_text,
+                            "page": page_num,
+                        }
+                    )
 
             doc.close()
 
@@ -60,7 +62,7 @@ class PDFParser(BaseParser):
                     "creation_date": metadata.get("creationDate"),
                 },
                 sections=sections,
-                page_count=len(doc)
+                page_count=len(doc),
             )
 
         except Exception as e:

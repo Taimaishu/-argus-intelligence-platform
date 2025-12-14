@@ -2,11 +2,28 @@
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, JSON, Enum as SQLEnum
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    JSON,
+    Enum as SQLEnum,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from .enums import DocumentType, ProcessingStatus, NodeType, ArtifactType, AnalysisStatus, ThreatLevel
+from .enums import (
+    DocumentType,
+    ProcessingStatus,
+    NodeType,
+    ArtifactType,
+    AnalysisStatus,
+    ThreatLevel,
+)
 
 Base = declarative_base()
 
@@ -27,7 +44,9 @@ class Document(Base):
     author = Column(String(255), nullable=True)
 
     # Processing info
-    processing_status = Column(SQLEnum(ProcessingStatus), default=ProcessingStatus.PENDING)
+    processing_status = Column(
+        SQLEnum(ProcessingStatus), default=ProcessingStatus.PENDING
+    )
     error_message = Column(Text, nullable=True)
 
     # Timestamps
@@ -35,7 +54,9 @@ class Document(Base):
     processed_date = Column(DateTime, nullable=True)
 
     # Relationships
-    chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
+    chunks = relationship(
+        "DocumentChunk", back_populates="document", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Document(id={self.id}, filename='{self.filename}', status='{self.processing_status}')>"
@@ -47,7 +68,9 @@ class DocumentChunk(Base):
     __tablename__ = "document_chunks"
 
     id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    document_id = Column(
+        Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False
+    )
     chunk_index = Column(Integer, nullable=False)  # Order of chunk in document
     chunk_text = Column(Text, nullable=False)
     embedding_id = Column(String(255), nullable=True)  # ChromaDB reference
@@ -82,15 +105,29 @@ class CanvasNode(Base):
     data = Column(JSON, nullable=False)  # Contains title, content, color, etc.
 
     # Link to document if it's a document node
-    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=True)
+    document_id = Column(
+        Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
+    )
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
-    source_edges = relationship("CanvasEdge", foreign_keys="CanvasEdge.source_node_id", back_populates="source_node", cascade="all, delete-orphan")
-    target_edges = relationship("CanvasEdge", foreign_keys="CanvasEdge.target_node_id", back_populates="target_node", cascade="all, delete-orphan")
+    source_edges = relationship(
+        "CanvasEdge",
+        foreign_keys="CanvasEdge.source_node_id",
+        back_populates="source_node",
+        cascade="all, delete-orphan",
+    )
+    target_edges = relationship(
+        "CanvasEdge",
+        foreign_keys="CanvasEdge.target_node_id",
+        back_populates="target_node",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<CanvasNode(id='{self.id}', type='{self.type}')>"
@@ -102,11 +139,17 @@ class CanvasEdge(Base):
     __tablename__ = "canvas_edges"
 
     id = Column(String(255), primary_key=True)  # UUID
-    source_node_id = Column(String(255), ForeignKey("canvas_nodes.id", ondelete="CASCADE"), nullable=False)
-    target_node_id = Column(String(255), ForeignKey("canvas_nodes.id", ondelete="CASCADE"), nullable=False)
+    source_node_id = Column(
+        String(255), ForeignKey("canvas_nodes.id", ondelete="CASCADE"), nullable=False
+    )
+    target_node_id = Column(
+        String(255), ForeignKey("canvas_nodes.id", ondelete="CASCADE"), nullable=False
+    )
 
     # Connection metadata
-    connection_type = Column(String(50), default="default")  # default, related, derived, etc.
+    connection_type = Column(
+        String(50), default="default"
+    )  # default, related, derived, etc.
     strength = Column(Float, nullable=True)  # Similarity score or connection strength
 
     # Edge data (stored as JSON)
@@ -116,8 +159,12 @@ class CanvasEdge(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    source_node = relationship("CanvasNode", foreign_keys=[source_node_id], back_populates="source_edges")
-    target_node = relationship("CanvasNode", foreign_keys=[target_node_id], back_populates="target_edges")
+    source_node = relationship(
+        "CanvasNode", foreign_keys=[source_node_id], back_populates="source_edges"
+    )
+    target_node = relationship(
+        "CanvasNode", foreign_keys=[target_node_id], back_populates="target_edges"
+    )
 
     def __repr__(self):
         return f"<CanvasEdge(id='{self.id}', {self.source_node_id} -> {self.target_node_id})>"
@@ -133,7 +180,9 @@ class Setting(Base):
 
     # Metadata
     description = Column(String(512), nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     def __repr__(self):
         return f"<Setting(key='{self.key}')>"
@@ -149,10 +198,17 @@ class ChatSession(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Relationships
-    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
+    messages = relationship(
+        "ChatMessage",
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.created_at",
+    )
 
     def __repr__(self):
         return f"<ChatSession(id={self.id}, title='{self.title}')>"
@@ -164,7 +220,9 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(
+        Integer, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False
+    )
 
     role = Column(String(50), nullable=False)  # 'user' or 'assistant'
     content = Column(Text, nullable=False)
@@ -200,8 +258,12 @@ class Artifact(Base):
     analysis_data = Column(JSON, nullable=True)
 
     # Source tracking
-    document_id = Column(Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
-    extracted = Column(Integer, default=0)  # 1 if auto-extracted, 0 if manually submitted
+    document_id = Column(
+        Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+    extracted = Column(
+        Integer, default=0
+    )  # 1 if auto-extracted, 0 if manually submitted
 
     # Metadata
     first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -209,7 +271,9 @@ class Artifact(Base):
     notes = Column(Text, nullable=True)
 
     # Relationships
-    tags = relationship("ArtifactTag", back_populates="artifact", cascade="all, delete-orphan")
+    tags = relationship(
+        "ArtifactTag", back_populates="artifact", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Artifact(id={self.id}, type='{self.artifact_type}', value='{self.value}')>"
@@ -221,7 +285,9 @@ class ArtifactTag(Base):
     __tablename__ = "artifact_tags"
 
     id = Column(Integer, primary_key=True, index=True)
-    artifact_id = Column(Integer, ForeignKey("artifacts.id", ondelete="CASCADE"), nullable=False)
+    artifact_id = Column(
+        Integer, ForeignKey("artifacts.id", ondelete="CASCADE"), nullable=False
+    )
     tag = Column(String(50), nullable=False, index=True)
 
     # Timestamps

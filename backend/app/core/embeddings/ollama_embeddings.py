@@ -30,15 +30,14 @@ class OllamaEmbeddingService(BaseEmbedding):
         # Test connection and get model info
         try:
             # Generate a test embedding to verify model works
-            test_result = ollama.embeddings(
-                model=self.model_name,
-                prompt="test"
-            )
-            self.dimension = len(test_result['embedding'])
+            test_result = ollama.embeddings(model=self.model_name, prompt="test")
+            self.dimension = len(test_result["embedding"])
             logger.info(f"Ollama model ready. Dimension: {self.dimension}")
         except Exception as e:
             logger.error(f"Failed to initialize Ollama: {str(e)}")
-            logger.error(f"Make sure Ollama is running and model '{self.model_name}' is available")
+            logger.error(
+                f"Make sure Ollama is running and model '{self.model_name}' is available"
+            )
             raise
 
     def embed_text(self, text: str) -> EmbeddingResult:
@@ -52,17 +51,12 @@ class OllamaEmbeddingService(BaseEmbedding):
             EmbeddingResult with vector
         """
         try:
-            response = ollama.embeddings(
-                model=self.model_name,
-                prompt=text
-            )
+            response = ollama.embeddings(model=self.model_name, prompt=text)
 
-            embedding = response['embedding']
+            embedding = response["embedding"]
 
             return EmbeddingResult(
-                embedding=embedding,
-                model=self.model_name,
-                dimension=len(embedding)
+                embedding=embedding, model=self.model_name, dimension=len(embedding)
             )
         except Exception as e:
             logger.error(f"Failed to generate Ollama embedding: {str(e)}")

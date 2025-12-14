@@ -15,7 +15,7 @@ from app.utils.file_utils import (
     get_file_extension,
     generate_unique_filename,
     ensure_upload_dir,
-    get_file_type_from_extension
+    get_file_type_from_extension,
 )
 from app.utils.logger import logger
 
@@ -42,7 +42,7 @@ def process_document_background(file_path: str, document_id: int):
 async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Upload a document for processing.
@@ -65,7 +65,7 @@ async def upload_document(
         if not document_processor.is_supported_file(file.filename):
             raise HTTPException(
                 status_code=400,
-                detail=f"Unsupported file type: {file_extension}. Supported types: {', '.join(document_processor.get_supported_extensions())}"
+                detail=f"Unsupported file type: {file_extension}. Supported types: {', '.join(document_processor.get_supported_extensions())}",
             )
 
         # Read file content to validate size
@@ -75,7 +75,7 @@ async def upload_document(
         if not validate_file_size(file_size):
             raise HTTPException(
                 status_code=413,
-                detail=f"File too large. Maximum size: {file_size / (1024*1024):.2f} MB"
+                detail=f"File too large. Maximum size: {file_size / (1024*1024):.2f} MB",
             )
 
         # Generate unique filename and save
@@ -98,7 +98,7 @@ async def upload_document(
             file_path=str(file_path),
             file_type=DocumentType(doc_type),
             file_size=file_size,
-            processing_status=ProcessingStatus.PENDING
+            processing_status=ProcessingStatus.PENDING,
         )
 
         db.add(document)
@@ -106,11 +106,13 @@ async def upload_document(
         db.refresh(document)
 
         # Add background task to process document
-        background_tasks.add_task(process_document_background, str(file_path), document.id)
+        background_tasks.add_task(
+            process_document_background, str(file_path), document.id
+        )
 
         return UploadResponse(
             message="File uploaded successfully. Processing started.",
-            document=DocumentResponse.model_validate(document)
+            document=DocumentResponse.model_validate(document),
         )
 
     except HTTPException:
@@ -121,11 +123,7 @@ async def upload_document(
 
 
 @router.get("", response_model=DocumentListResponse)
-def list_documents(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
+def list_documents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     List all documents.
 
@@ -137,12 +135,18 @@ def list_documents(
     Returns:
         List of documents
     """
-    documents = db.query(Document).order_by(Document.upload_date.desc()).offset(skip).limit(limit).all()
+    documents = (
+        db.query(Document)
+        .order_by(Document.upload_date.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     total = db.query(Document).count()
 
     return DocumentListResponse(
         documents=[DocumentResponse.model_validate(doc) for doc in documents],
-        total=total
+        total=total,
     )
 
 

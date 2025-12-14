@@ -24,10 +24,7 @@ class DocumentProcessor:
         self.vector_store = None
 
     def process_document(
-        self,
-        file_path: str,
-        document: Document,
-        db: Session
+        self, file_path: str, document: Document, db: Session
     ) -> List[DocumentChunk]:
         """
         Process document: parse, chunk, and create database entries.
@@ -166,21 +163,20 @@ class DocumentProcessor:
             ids.append(chunk_id)
             embeddings.append(emb_result.embedding)
             documents.append(chunk.chunk_text)
-            metadatas.append({
-                "document_id": chunk.document_id,
-                "chunk_index": chunk.chunk_index,
-                "chunk_id": chunk.id if chunk.id else 0
-            })
+            metadatas.append(
+                {
+                    "document_id": chunk.document_id,
+                    "chunk_index": chunk.chunk_index,
+                    "chunk_id": chunk.id if chunk.id else 0,
+                }
+            )
 
             # Store embedding ID in database
             chunk.embedding_id = chunk_id
 
         # Add to vector store
         self.vector_store.add(
-            ids=ids,
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas
+            ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
         )
 
         db.commit()

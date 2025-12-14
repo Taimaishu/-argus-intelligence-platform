@@ -33,19 +33,18 @@ class VectorStore:
         # Initialize ChromaDB client in persistent mode
         self.client = chromadb.PersistentClient(
             path=str(chroma_path),
-            settings=Settings(
-                anonymized_telemetry=False,
-                allow_reset=True
-            )
+            settings=Settings(anonymized_telemetry=False, allow_reset=True),
         )
 
         # Get or create collection
         try:
             self.collection = self.client.get_or_create_collection(
                 name=collection_name,
-                metadata={"hnsw:space": "cosine"}  # Use cosine similarity
+                metadata={"hnsw:space": "cosine"},  # Use cosine similarity
             )
-            logger.info(f"Collection '{collection_name}' ready. Count: {self.collection.count()}")
+            logger.info(
+                f"Collection '{collection_name}' ready. Count: {self.collection.count()}"
+            )
         except Exception as e:
             logger.error(f"Failed to initialize collection: {str(e)}")
             raise
@@ -55,7 +54,7 @@ class VectorStore:
         ids: List[str],
         embeddings: List[List[float]],
         documents: List[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None
+        metadatas: Optional[List[Dict[str, Any]]] = None,
     ):
         """
         Add embeddings to the vector store.
@@ -68,10 +67,7 @@ class VectorStore:
         """
         try:
             self.collection.add(
-                ids=ids,
-                embeddings=embeddings,
-                documents=documents,
-                metadatas=metadatas
+                ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
             )
             logger.info(f"Added {len(ids)} embeddings to collection")
         except Exception as e:
@@ -83,7 +79,7 @@ class VectorStore:
         query_embeddings: List[List[float]],
         n_results: int = 10,
         where: Optional[Dict[str, Any]] = None,
-        where_document: Optional[Dict[str, str]] = None
+        where_document: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
         Query the vector store for similar documents.
@@ -102,7 +98,7 @@ class VectorStore:
                 query_embeddings=query_embeddings,
                 n_results=n_results,
                 where=where,
-                where_document=where_document
+                where_document=where_document,
             )
             return results
         except Exception as e:
@@ -113,7 +109,7 @@ class VectorStore:
         self,
         ids: Optional[List[str]] = None,
         where: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Get embeddings by ID or filter.
@@ -127,19 +123,13 @@ class VectorStore:
             Retrieved embeddings and metadata
         """
         try:
-            return self.collection.get(
-                ids=ids,
-                where=where,
-                limit=limit
-            )
+            return self.collection.get(ids=ids, where=where, limit=limit)
         except Exception as e:
             logger.error(f"Failed to get from vector store: {str(e)}")
             raise
 
     def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        where: Optional[Dict[str, Any]] = None
+        self, ids: Optional[List[str]] = None, where: Optional[Dict[str, Any]] = None
     ):
         """
         Delete embeddings by ID or filter.
@@ -149,10 +139,7 @@ class VectorStore:
             where: Metadata filter
         """
         try:
-            self.collection.delete(
-                ids=ids,
-                where=where
-            )
+            self.collection.delete(ids=ids, where=where)
             logger.info(f"Deleted embeddings from collection")
         except Exception as e:
             logger.error(f"Failed to delete from vector store: {str(e)}")
@@ -172,8 +159,7 @@ class VectorStore:
         try:
             self.client.delete_collection(name=self.collection_name)
             self.collection = self.client.create_collection(
-                name=self.collection_name,
-                metadata={"hnsw:space": "cosine"}
+                name=self.collection_name, metadata={"hnsw:space": "cosine"}
             )
             logger.warning(f"Collection '{self.collection_name}' has been reset")
         except Exception as e:

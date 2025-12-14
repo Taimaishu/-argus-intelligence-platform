@@ -14,10 +14,7 @@ search_engine = SearchEngine()
 
 
 @router.post("", response_model=SearchResponse)
-def search_documents(
-    search_request: SearchRequest,
-    db: Session = Depends(get_db)
-):
+def search_documents(search_request: SearchRequest, db: Session = Depends(get_db)):
     """
     Perform semantic search across all documents.
 
@@ -39,7 +36,7 @@ def search_documents(
             query=search_request.query,
             db=db,
             top_k=search_request.top_k,
-            document_ids=search_request.document_ids
+            document_ids=search_request.document_ids,
         )
 
         # Convert to response schema
@@ -51,7 +48,7 @@ def search_documents(
                 chunk_text=r.chunk_text,
                 snippet=r.snippet,
                 relevance_score=r.relevance_score,
-                chunk_index=r.chunk_index
+                chunk_index=r.chunk_index,
             )
             for r in results
         ]
@@ -64,7 +61,7 @@ def search_documents(
             query=search_request.query,
             results=result_items,
             total_results=len(result_items),
-            embedding_model=model_name
+            embedding_model=model_name,
         )
 
     except Exception as e:
@@ -74,10 +71,7 @@ def search_documents(
 
 @router.get("/similar/{document_id}/{chunk_index}")
 def get_similar_chunks(
-    document_id: int,
-    chunk_index: int,
-    top_k: int = 5,
-    db: Session = Depends(get_db)
+    document_id: int, chunk_index: int, top_k: int = 5, db: Session = Depends(get_db)
 ):
     """
     Find similar chunks to a given chunk (for "related documents" feature).
@@ -96,10 +90,7 @@ def get_similar_chunks(
     """
     try:
         results = search_engine.get_similar_chunks(
-            document_id=document_id,
-            chunk_index=chunk_index,
-            db=db,
-            top_k=top_k
+            document_id=document_id, chunk_index=chunk_index, db=db, top_k=top_k
         )
 
         result_items = [
@@ -110,7 +101,7 @@ def get_similar_chunks(
                 chunk_text=r.chunk_text,
                 snippet=r.snippet,
                 relevance_score=r.relevance_score,
-                chunk_index=r.chunk_index
+                chunk_index=r.chunk_index,
             )
             for r in results
             if r.document_id != document_id  # Filter out same document
@@ -119,7 +110,7 @@ def get_similar_chunks(
         return {
             "document_id": document_id,
             "chunk_index": chunk_index,
-            "similar_chunks": result_items
+            "similar_chunks": result_items,
         }
 
     except Exception as e:
@@ -128,10 +119,7 @@ def get_similar_chunks(
 
 
 @router.get("/document/{document_id}/summary")
-def get_document_search_summary(
-    document_id: int,
-    db: Session = Depends(get_db)
-):
+def get_document_search_summary(document_id: int, db: Session = Depends(get_db)):
     """
     Get summary of document's searchability.
 

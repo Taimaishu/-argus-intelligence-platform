@@ -19,5 +19,7 @@ def health_check():
     return HealthCheck(
         status="healthy",
         version="0.1.0",
-        supported_file_types=sorted(list(document_processor.get_supported_extensions()))
+        supported_file_types=sorted(
+            list(document_processor.get_supported_extensions())
+        ),
     )

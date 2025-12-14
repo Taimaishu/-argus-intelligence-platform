@@ -15,7 +15,7 @@ class WebScraperService:
 
     def __init__(self):
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
     def scrape_url(self, url: str) -> Dict[str, Any]:
@@ -42,7 +42,7 @@ class WebScraperService:
             "phones": [],
             "social_media": {},
             "technologies": [],
-            "metadata": {}
+            "metadata": {},
         }
 
         try:
@@ -56,19 +56,19 @@ class WebScraperService:
                 return result
 
             # Parse HTML
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(response.content, "html.parser")
 
             # Extract title
             if soup.title:
                 result["title"] = soup.title.string.strip()
 
             # Extract meta description
-            meta_desc = soup.find('meta', attrs={'name': 'description'})
+            meta_desc = soup.find("meta", attrs={"name": "description"})
             if meta_desc:
-                result["description"] = meta_desc.get('content', '').strip()
+                result["description"] = meta_desc.get("content", "").strip()
 
             # Extract all text content
-            result["content"] = soup.get_text(separator=' ', strip=True)
+            result["content"] = soup.get_text(separator=" ", strip=True)
 
             # Extract links
             result["links"] = self._extract_links(soup, url)
@@ -108,55 +108,67 @@ class WebScraperService:
 
         return result
 
-    def _extract_links(self, soup: BeautifulSoup, base_url: str) -> List[Dict[str, str]]:
+    def _extract_links(
+        self, soup: BeautifulSoup, base_url: str
+    ) -> List[Dict[str, str]]:
         """Extract all links from the page."""
         links = []
         seen = set()
 
-        for link in soup.find_all('a', href=True):
-            href = link['href']
+        for link in soup.find_all("a", href=True):
+            href = link["href"]
             absolute_url = urljoin(base_url, href)
 
             if absolute_url not in seen:
                 seen.add(absolute_url)
-                links.append({
-                    "url": absolute_url,
-                    "text": link.get_text(strip=True)[:100],
-                    "rel": link.get('rel', [])
-                })
+                links.append(
+                    {
+                        "url": absolute_url,
+                        "text": link.get_text(strip=True)[:100],
+                        "rel": link.get("rel", []),
+                    }
+                )
 
         return links[:100]  # Limit to first 100 links
 
-    def _extract_images(self, soup: BeautifulSoup, base_url: str) -> List[Dict[str, str]]:
+    def _extract_images(
+        self, soup: BeautifulSoup, base_url: str
+    ) -> List[Dict[str, str]]:
         """Extract all images from the page."""
         images = []
 
-        for img in soup.find_all('img'):
-            src = img.get('src')
+        for img in soup.find_all("img"):
+            src = img.get("src")
             if src:
                 absolute_url = urljoin(base_url, src)
-                images.append({
-                    "url": absolute_url,
-                    "alt": img.get('alt', ''),
-                    "title": img.get('title', '')
-                })
+                images.append(
+                    {
+                        "url": absolute_url,
+                        "alt": img.get("alt", ""),
+                        "title": img.get("title", ""),
+                    }
+                )
 
         return images[:50]  # Limit to first 50 images
 
     def _extract_emails(self, text: str) -> List[str]:
         """Extract email addresses from text."""
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
         emails = re.findall(email_pattern, text)
         return list(set(emails))[:20]  # Limit to 20 unique emails
 
     def _extract_phones(self, text: str) -> List[str]:
         """Extract phone numbers from text."""
         # Basic phone pattern (US-centric, can be extended)
-        phone_pattern = r'\b(?:\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})\b'
+        phone_pattern = (
+            r"\b(?:\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})\b"
+        )
         phones = re.findall(phone_pattern, text)
-        return ['-'.join(phone) for phone in phones[:20]]  # Limit to 20
+        return ["-".join(phone) for phone in phones[:20]]  # Limit to 20
 
-    def _extract_social_media(self, links: List[Dict[str, str]]) -> Dict[str, List[str]]:
+    def _extract_social_media(
+        self, links: List[Dict[str, str]]
+    ) -> Dict[str, List[str]]:
         """Extract social media profile links."""
         social_media = {
             "twitter": [],
@@ -165,7 +177,7 @@ class WebScraperService:
             "instagram": [],
             "youtube": [],
             "github": [],
-            "telegram": []
+            "telegram": [],
         }
 
         for link in links:
@@ -189,44 +201,46 @@ class WebScraperService:
         # Remove empty lists
         return {k: v for k, v in social_media.items() if v}
 
-    def _detect_technologies(self, soup: BeautifulSoup, headers: Dict[str, str]) -> List[str]:
+    def _detect_technologies(
+        self, soup: BeautifulSoup, headers: Dict[str, str]
+    ) -> List[str]:
         """Detect technologies used by the website."""
         technologies = []
 
         # Check headers
-        server = headers.get('Server', '').lower()
-        if 'nginx' in server:
-            technologies.append('Nginx')
-        elif 'apache' in server:
-            technologies.append('Apache')
+        server = headers.get("Server", "").lower()
+        if "nginx" in server:
+            technologies.append("Nginx")
+        elif "apache" in server:
+            technologies.append("Apache")
 
-        powered_by = headers.get('X-Powered-By', '').lower()
-        if 'php' in powered_by:
-            technologies.append('PHP')
-        elif 'asp.net' in powered_by:
-            technologies.append('ASP.NET')
+        powered_by = headers.get("X-Powered-By", "").lower()
+        if "php" in powered_by:
+            technologies.append("PHP")
+        elif "asp.net" in powered_by:
+            technologies.append("ASP.NET")
 
         # Check meta tags
-        for meta in soup.find_all('meta'):
-            generator = meta.get('generator', '').lower()
-            if 'wordpress' in generator:
-                technologies.append('WordPress')
-            elif 'drupal' in generator:
-                technologies.append('Drupal')
-            elif 'joomla' in generator:
-                technologies.append('Joomla')
+        for meta in soup.find_all("meta"):
+            generator = meta.get("generator", "").lower()
+            if "wordpress" in generator:
+                technologies.append("WordPress")
+            elif "drupal" in generator:
+                technologies.append("Drupal")
+            elif "joomla" in generator:
+                technologies.append("Joomla")
 
         # Check scripts
-        for script in soup.find_all('script', src=True):
-            src = script['src'].lower()
-            if 'jquery' in src:
-                technologies.append('jQuery')
-            elif 'react' in src:
-                technologies.append('React')
-            elif 'vue' in src:
-                technologies.append('Vue.js')
-            elif 'angular' in src:
-                technologies.append('Angular')
+        for script in soup.find_all("script", src=True):
+            src = script["src"].lower()
+            if "jquery" in src:
+                technologies.append("jQuery")
+            elif "react" in src:
+                technologies.append("React")
+            elif "vue" in src:
+                technologies.append("Vue.js")
+            elif "angular" in src:
+                technologies.append("Angular")
 
         return list(set(technologies))
 
@@ -235,23 +249,23 @@ class WebScraperService:
         metadata = {}
 
         # Open Graph tags
-        og_tags = soup.find_all('meta', property=re.compile(r'^og:'))
+        og_tags = soup.find_all("meta", property=re.compile(r"^og:"))
         for tag in og_tags:
-            prop = tag.get('property', '')
-            content = tag.get('content', '')
+            prop = tag.get("property", "")
+            content = tag.get("content", "")
             metadata[prop] = content
 
         # Twitter Card tags
-        twitter_tags = soup.find_all('meta', attrs={'name': re.compile(r'^twitter:')})
+        twitter_tags = soup.find_all("meta", attrs={"name": re.compile(r"^twitter:")})
         for tag in twitter_tags:
-            name = tag.get('name', '')
-            content = tag.get('content', '')
+            name = tag.get("name", "")
+            content = tag.get("content", "")
             metadata[name] = content
 
         # Other meta tags
-        for meta in soup.find_all('meta'):
-            name = meta.get('name', meta.get('property', ''))
-            content = meta.get('content', '')
+        for meta in soup.find_all("meta"):
+            name = meta.get("name", meta.get("property", ""))
+            content = meta.get("content", "")
             if name and content and name not in metadata:
                 metadata[name] = content
 
@@ -272,7 +286,7 @@ class WebScraperService:
             "archived": False,
             "snapshots": [],
             "first_snapshot": None,
-            "last_snapshot": None
+            "last_snapshot": None,
         }
 
         try:
@@ -282,15 +296,15 @@ class WebScraperService:
 
             if response.status_code == 200:
                 data = response.json()
-                archived = data.get('archived_snapshots', {})
+                archived = data.get("archived_snapshots", {})
 
-                if archived and 'closest' in archived:
-                    closest = archived['closest']
+                if archived and "closest" in archived:
+                    closest = archived["closest"]
                     result["archived"] = True
                     result["last_snapshot"] = {
-                        "url": closest.get('url'),
-                        "timestamp": closest.get('timestamp'),
-                        "status": closest.get('status')
+                        "url": closest.get("url"),
+                        "timestamp": closest.get("timestamp"),
+                        "status": closest.get("status"),
                     }
 
             # Get calendar data for snapshot count
@@ -299,7 +313,7 @@ class WebScraperService:
 
             if cal_response.status_code == 200:
                 cal_data = cal_response.json()
-                years = cal_data.get('years', [])
+                years = cal_data.get("years", [])
                 if years:
                     result["snapshot_count"] = sum(
                         sum(month.values()) for year in years for month in year.values()
@@ -323,17 +337,26 @@ class WebScraperService:
         """
         subdomains = []
         common_subdomains = [
-            'www', 'mail', 'ftp', 'admin', 'blog', 'dev', 'staging',
-            'api', 'app', 'portal', 'shop', 'store', 'support'
+            "www",
+            "mail",
+            "ftp",
+            "admin",
+            "blog",
+            "dev",
+            "staging",
+            "api",
+            "app",
+            "portal",
+            "shop",
+            "store",
+            "support",
         ]
 
         for subdomain in common_subdomains:
             test_domain = f"{subdomain}.{domain}"
             try:
                 response = requests.head(
-                    f"http://{test_domain}",
-                    timeout=3,
-                    allow_redirects=True
+                    f"http://{test_domain}", timeout=3, allow_redirects=True
                 )
                 if response.status_code < 400:
                     subdomains.append(test_domain)
@@ -357,7 +380,7 @@ class WebScraperService:
             "exists": False,
             "content": None,
             "disallowed_paths": [],
-            "sitemaps": []
+            "sitemaps": [],
         }
 
         try:
@@ -371,14 +394,14 @@ class WebScraperService:
                 result["content"] = response.text
 
                 # Parse disallow rules
-                for line in response.text.split('\n'):
+                for line in response.text.split("\n"):
                     line = line.strip()
-                    if line.lower().startswith('disallow:'):
-                        path = line.split(':', 1)[1].strip()
+                    if line.lower().startswith("disallow:"):
+                        path = line.split(":", 1)[1].strip()
                         if path:
                             result["disallowed_paths"].append(path)
-                    elif line.lower().startswith('sitemap:'):
-                        sitemap = line.split(':', 1)[1].strip()
+                    elif line.lower().startswith("sitemap:"):
+                        sitemap = line.split(":", 1)[1].strip()
                         result["sitemaps"].append(sitemap)
 
         except Exception as e:

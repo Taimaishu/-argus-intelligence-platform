@@ -15,6 +15,7 @@ router = APIRouter(tags=["canvas"])
 # Schemas
 class NodeData(BaseModel):
     """Node data schema."""
+
     label: str
     content: Optional[str] = None
     color: Optional[str] = None
@@ -23,6 +24,7 @@ class NodeData(BaseModel):
 
 class NodeCreate(BaseModel):
     """Create node request."""
+
     id: str
     type: str
     position: dict
@@ -31,12 +33,14 @@ class NodeCreate(BaseModel):
 
 class NodeUpdate(BaseModel):
     """Update node request."""
+
     position: Optional[dict] = None
     data: Optional[NodeData] = None
 
 
 class EdgeCreate(BaseModel):
     """Create edge request."""
+
     id: str
     source: str
     target: str
@@ -46,6 +50,7 @@ class EdgeCreate(BaseModel):
 
 class CanvasState(BaseModel):
     """Complete canvas state."""
+
     nodes: List[dict]
     edges: List[dict]
 
@@ -276,7 +281,11 @@ def save_canvas_state(state: CanvasState, db: Session = Depends(get_db)):
 
     db.commit()
 
-    return {"message": "Canvas state saved", "nodes": len(state.nodes), "edges": len(state.edges)}
+    return {
+        "message": "Canvas state saved",
+        "nodes": len(state.nodes),
+        "edges": len(state.edges),
+    }
 
 
 @router.delete("/canvas/clear")
