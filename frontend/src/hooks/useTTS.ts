@@ -25,20 +25,40 @@ export const useTTS = (options: UseTTSOptions = {}) => {
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Load available voices
+  // Load available voices with retry
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 10;
+
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
 
-      // Try to select a good default voice (prefer English)
-      if (availableVoices.length > 0 && !selectedVoice) {
-        const englishVoice = availableVoices.find(v => v.lang.startsWith('en'));
-        setSelectedVoice(englishVoice || availableVoices[0]);
+      if (availableVoices.length === 0 && retryCount < maxRetries) {
+        // Voices not loaded yet, retry
+        retryCount++;
+        setTimeout(loadVoices, 100);
+        return;
+      }
+
+      if (availableVoices.length > 0) {
+        console.log(`Loaded ${availableVoices.length} voices:`, availableVoices.map(v => v.name));
+        setVoices(availableVoices);
+
+        // Try to select a good default voice (prefer English)
+        if (!selectedVoice) {
+          const englishVoice = availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
+          setSelectedVoice(englishVoice);
+          console.log('Selected voice:', englishVoice?.name);
+        }
+      } else {
+        console.warn('No voices available after retries');
       }
     };
 
+    // Try loading immediately
     loadVoices();
+
+    // Also listen for voiceschanged event
     window.speechSynthesis.onvoiceschanged = loadVoices;
 
     return () => {
@@ -47,7 +67,10 @@ export const useTTS = (options: UseTTSOptions = {}) => {
   }, [selectedVoice]);
 
   const speakAlways = useCallback((text: string) => {
-    if (!text) return;
+    if (!text) {
+      console.warn('No text provided to speak');
+      return;
+    }
 
     // Check if speech synthesis is supported
     if (!window.speechSynthesis) {
@@ -59,48 +82,93 @@ export const useTTS = (options: UseTTSOptions = {}) => {
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
-    // Small delay to ensure cancellation is processed
+    // Use a longer delay and ensure voices are loaded
     setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = rate;
-      utterance.pitch = pitch;
-      utterance.volume = volume;
-      utterance.lang = 'en-US';
+      try {
+        // Force reload voices
+        const availableVoices = window.speechSynthesis.getVoices();
+        console.log('Available voices:', availableVoices.length);
 
-      // Get voices and select one if available
-      const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices.length > 0) {
+        if (availableVoices.length === 0) {
+          console.error('No voices available');
+          alert('No voices available. Please wait a moment and try again, or restart your browser.');
+          return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        utterance.volume = volume;
+        utterance.lang = 'en-US';
+
+        // Select voice
         const voice = selectedVoice || availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
-        utterance.voice = voice;
+        if (voice) {
+          utterance.voice = voice;
+          console.log('Using voice:', voice.name);
+        }
+
+        utterance.onstart = () => {
+          console.log('✓ Speech started successfully');
+          setIsSpeaking(true);
+        };
+
+        utterance.onend = () => {
+          console.log('✓ Speech ended');
+          setIsSpeaking(false);
+        };
+
+        utterance.onpause = () => {
+          console.log('Speech paused');
+        };
+
+        utterance.onresume = () => {
+          console.log('Speech resumed');
+        };
+
+        utterance.onerror = (e) => {
+          console.error('✗ Speech synthesis error:', {
+            error: e.error,
+            message: e.message,
+            type: e.type
+          });
+
+          let errorMsg = `Speech error: ${e.error}`;
+          if (e.error === 'not-allowed') {
+            errorMsg += '\n\nYour browser blocked speech. Please:\n1. Check browser permissions\n2. Make sure audio is not muted\n3. Try interacting with the page first (click something)';
+          } else if (e.error === 'network') {
+            errorMsg += '\n\nNetwork error. Check your internet connection.';
+          }
+
+          alert(errorMsg);
+          setIsSpeaking(false);
+        };
+
+        console.log('▶ Starting speech synthesis:', {
+          textLength: text.length,
+          textPreview: text.substring(0, 50) + '...',
+          voice: utterance.voice?.name,
+          rate,
+          pitch,
+          volume
+        });
+
+        utteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+
+        // Verify it started
+        setTimeout(() => {
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            console.error('✗ Speech did not start');
+            alert('Speech did not start. Your browser may have blocked it. Try clicking the button again.');
+          }
+        }, 500);
+      } catch (error) {
+        console.error('Exception in speakAlways:', error);
+        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setIsSpeaking(false);
       }
-
-      utterance.onstart = () => {
-        console.log('Speech started');
-        setIsSpeaking(true);
-      };
-
-      utterance.onend = () => {
-        console.log('Speech ended');
-        setIsSpeaking(false);
-      };
-
-      utterance.onerror = (e) => {
-        console.error('Speech synthesis error:', e);
-        alert(`Speech error: ${e.error}. Try clicking the button again.`);
-        setIsSpeaking(false);
-      };
-
-      console.log('Starting speech synthesis...', {
-        text: text.substring(0, 50) + '...',
-        voice: utterance.voice?.name,
-        rate,
-        pitch,
-        volume
-      });
-
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-    }, 100);
+    }, 250);
   }, [rate, pitch, volume, selectedVoice]);
 
   const speak = useCallback((text: string) => {
