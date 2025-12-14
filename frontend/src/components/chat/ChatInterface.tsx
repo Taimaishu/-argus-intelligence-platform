@@ -4,9 +4,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Send, Loader2, Bot, User, Plus, Trash2 } from 'lucide-react';
+import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker } from 'lucide-react';
 import { useChatStore } from '../../store/useChatStore';
 import { ModelSelector } from './ModelSelector';
+import { useTTS } from '../../hooks/useTTS';
 
 export const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
@@ -27,6 +28,8 @@ export const ChatInterface = () => {
   } = useChatStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isEnabled, isSpeaking, speak, stop, toggle } = useTTS();
+  const lastMessageIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     fetchSessions();
@@ -35,7 +38,22 @@ export const ChatInterface = () => {
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [currentSession?.messages]);
+
+    // Auto-speak new assistant messages when TTS is enabled
+    if (isEnabled && currentSession?.messages && currentSession.messages.length > 0) {
+      const lastMessage = currentSession.messages[currentSession.messages.length - 1];
+
+      // Only speak if it's a new assistant message
+      if (
+        lastMessage.role === 'assistant' &&
+        lastMessage.id !== lastMessageIdRef.current &&
+        !streaming
+      ) {
+        lastMessageIdRef.current = lastMessage.id;
+        speak(lastMessage.content);
+      }
+    }
+  }, [currentSession?.messages, isEnabled, speak, streaming]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -97,13 +115,40 @@ export const ChatInterface = () => {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg backdrop-blur-sm">
-        {/* Model Selector */}
-        <ModelSelector
-          provider={provider}
-          model={model}
-          onProviderChange={setProvider}
-          onModelChange={setModel}
-        />
+        {/* Model Selector and TTS Toggle */}
+        <div className="flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+          <ModelSelector
+            provider={provider}
+            model={model}
+            onProviderChange={setProvider}
+            onModelChange={setModel}
+          />
+
+          {/* TTS Toggle */}
+          <button
+            onClick={toggle}
+            className={`
+              flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 font-medium
+              ${isEnabled
+                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-2 border-blue-300 dark:border-blue-700'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }
+            `}
+            title={isEnabled ? 'Disable text-to-speech' : 'Enable text-to-speech'}
+          >
+            {isEnabled ? (
+              <>
+                <Volume2 className="w-5 h-5" />
+                <span className="text-sm">TTS On</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-5 h-5" />
+                <span className="text-sm">TTS Off</span>
+              </>
+            )}
+          </button>
+        </div>
 
         {!currentSession ? (
           <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -142,16 +187,30 @@ export const ChatInterface = () => {
                     </div>
                   )}
 
-                  <div
-                    className={`
-                      max-w-[70%] px-5 py-3 rounded-2xl shadow-lg
-                      ${message.role === 'user'
-                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white'
-                        : 'bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
-                      }
-                    `}
-                  >
-                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  <div className="flex flex-col gap-2 max-w-[70%]">
+                    <div
+                      className={`
+                        px-5 py-3 rounded-2xl shadow-lg
+                        ${message.role === 'user'
+                          ? 'bg-gradient-to-br from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white'
+                          : 'bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
+                        }
+                      `}
+                    >
+                      <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    </div>
+
+                    {/* Speaker button for assistant messages */}
+                    {message.role === 'assistant' && (
+                      <button
+                        onClick={() => speak(message.content)}
+                        className="self-start px-3 py-1.5 text-xs flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg transition-all border border-gray-300 dark:border-gray-600"
+                        title="Read this message aloud"
+                      >
+                        <Speaker className="w-3.5 h-3.5" />
+                        <span>Read aloud</span>
+                      </button>
+                    )}
                   </div>
 
                   {message.role === 'user' && (
