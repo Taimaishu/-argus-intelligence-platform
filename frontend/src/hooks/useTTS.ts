@@ -49,27 +49,58 @@ export const useTTS = (options: UseTTSOptions = {}) => {
   const speakAlways = useCallback((text: string) => {
     if (!text) return;
 
+    // Check if speech synthesis is supported
+    if (!window.speechSynthesis) {
+      console.error('Speech synthesis not supported in this browser');
+      alert('Text-to-speech is not supported in your browser. Please use Chrome, Edge, Safari, or Firefox.');
+      return;
+    }
+
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = rate;
-    utterance.pitch = pitch;
-    utterance.volume = volume;
+    // Small delay to ensure cancellation is processed
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      utterance.volume = volume;
+      utterance.lang = 'en-US';
 
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
+      // Get voices and select one if available
+      const availableVoices = window.speechSynthesis.getVoices();
+      if (availableVoices.length > 0) {
+        const voice = selectedVoice || availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
+        utterance.voice = voice;
+      }
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (e) => {
-      console.error('Speech synthesis error:', e);
-      setIsSpeaking(false);
-    };
+      utterance.onstart = () => {
+        console.log('Speech started');
+        setIsSpeaking(true);
+      };
 
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+      utterance.onend = () => {
+        console.log('Speech ended');
+        setIsSpeaking(false);
+      };
+
+      utterance.onerror = (e) => {
+        console.error('Speech synthesis error:', e);
+        alert(`Speech error: ${e.error}. Try clicking the button again.`);
+        setIsSpeaking(false);
+      };
+
+      console.log('Starting speech synthesis...', {
+        text: text.substring(0, 50) + '...',
+        voice: utterance.voice?.name,
+        rate,
+        pitch,
+        volume
+      });
+
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    }, 100);
   }, [rate, pitch, volume, selectedVoice]);
 
   const speak = useCallback((text: string) => {

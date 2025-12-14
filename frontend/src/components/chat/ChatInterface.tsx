@@ -197,7 +197,7 @@ export const ChatInterface = () => {
                         }
                       `}
                     >
-                      <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                      <p className="text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
                     </div>
 
                     {/* Speaker button for assistant messages */}
