@@ -75,7 +75,7 @@ export const useSpeechRecognition = (
           setError('Microphone permission denied. Please allow access.');
           break;
         case 'network':
-          setError('Network error. Speech recognition requires internet.');
+          setError('Network blocked. Brave users: Disable Shields or use text input instead.');
           break;
         default:
           setError(`Error: ${event.error}`);

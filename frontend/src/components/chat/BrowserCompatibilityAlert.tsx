@@ -53,10 +53,21 @@ export const BrowserCompatibilityAlert = () => {
             </div>
           </div>
           {!sttSupported && (
-            <p className="mt-3 text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>Brave Browser users:</strong> Make sure you've granted microphone permissions
-              and are accessing via localhost or HTTPS.
-            </p>
+            <div className="mt-3 text-sm text-yellow-800 dark:text-yellow-200 space-y-2">
+              <p>
+                <strong>Brave Browser users:</strong> Speech-to-text requires Google services which Brave blocks by default.
+              </p>
+              <p className="font-semibold">To enable voice input in Brave:</p>
+              <ol className="list-decimal ml-5 space-y-1">
+                <li>Click the Brave Shields icon (🦁) in the address bar</li>
+                <li>Click "Advanced View"</li>
+                <li>Under "Block cross-site cookies", select "All cookies allowed"</li>
+                <li>Refresh this page</li>
+              </ol>
+              <p className="italic">
+                Or use text input instead - voice features are optional!
+              </p>
+            </div>
           )}
         </div>
       </div>
