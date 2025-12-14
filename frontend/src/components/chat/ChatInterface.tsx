@@ -4,13 +4,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker } from 'lucide-react';
+import { Send, Loader2, Bot, User, Plus, Trash2, Volume2, VolumeX, Speaker, Pencil, Check } from 'lucide-react';
 import { useChatStore } from '../../store/useChatStore';
 import { ModelSelector } from './ModelSelector';
 import { useTTS } from '../../hooks/useTTS';
 
 export const ChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const {
     sessions,
     currentSession,
@@ -21,6 +23,7 @@ export const ChatInterface = () => {
     fetchSessions,
     createSession,
     selectSession,
+    updateSession,
     deleteSession,
     sendMessage,
     setProvider,
@@ -74,6 +77,25 @@ export const ChatInterface = () => {
     }
   };
 
+  const handleStartEdit = (sessionId: number, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSessionId(sessionId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleSaveEdit = async (sessionId: number) => {
+    if (editingTitle.trim()) {
+      await updateSession(sessionId, editingTitle.trim());
+    }
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
+
   return (
     <div className="flex h-[calc(100vh-12rem)] gap-6">
       {/* Sidebar - Session list */}
@@ -90,7 +112,7 @@ export const ChatInterface = () => {
           {sessions.map(session => (
             <div
               key={session.id}
-              onClick={() => selectSession(session.id)}
+              onClick={() => editingSessionId !== session.id && selectSession(session.id)}
               className={`
                 p-4 rounded-xl cursor-pointer flex items-center justify-between group transition-all duration-300
                 ${currentSession?.id === session.id
@@ -99,15 +121,57 @@ export const ChatInterface = () => {
                 }
               `}
             >
-              <span className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
-                {session.title}
-              </span>
-              <button
-                onClick={(e) => handleDeleteSession(session.id, e)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all"
-              >
-                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-              </button>
+              {editingSessionId === session.id ? (
+                <>
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveEdit(session.id);
+                      } else if (e.key === 'Escape') {
+                        handleCancelEdit();
+                      }
+                    }}
+                    onBlur={() => handleSaveEdit(session.id)}
+                    className="flex-1 text-sm font-medium px-2 py-1 bg-white dark:bg-gray-700 border border-blue-400 dark:border-blue-600 rounded text-gray-900 dark:text-white focus:outline-none"
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSaveEdit(session.id);
+                    }}
+                    className="ml-2 p-1.5 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-all"
+                  >
+                    <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
+                    {session.title}
+                  </span>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => handleStartEdit(session.id, session.title, e)}
+                      className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all"
+                      title="Rename chat"
+                    >
+                      <Pencil className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteSession(session.id, e)}
+                      className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                      title="Delete chat"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

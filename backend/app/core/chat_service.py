@@ -38,6 +38,18 @@ class ChatService:
             .all()
         )
 
+    def update_session(
+        self, db: Session, session_id: int, title: str
+    ) -> Optional[ChatSession]:
+        """Update a chat session title."""
+        session = self.get_session(db, session_id)
+        if not session:
+            return None
+        session.title = title
+        db.commit()
+        db.refresh(session)
+        return session
+
     def delete_session(self, db: Session, session_id: int) -> bool:
         """Delete a chat session."""
         session = self.get_session(db, session_id)

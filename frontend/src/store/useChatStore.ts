@@ -34,6 +34,7 @@ interface ChatStore {
   fetchSessions: () => Promise<void>;
   createSession: (title?: string) => Promise<void>;
   selectSession: (sessionId: number) => Promise<void>;
+  updateSession: (sessionId: number, title: string) => Promise<void>;
   deleteSession: (sessionId: number) => Promise<void>;
   sendMessage: (message: string, includeContext?: boolean) => Promise<void>;
   setProvider: (provider: string) => void;
@@ -100,6 +101,31 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch session',
         loading: false
+      });
+    }
+  },
+
+  updateSession: async (sessionId: number, title: string) => {
+    try {
+      const response = await fetch(`${API_URL}/chat/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      if (!response.ok) throw new Error('Failed to update session');
+      const updatedSession = await response.json();
+
+      set(state => ({
+        sessions: state.sessions.map(s =>
+          s.id === sessionId ? { ...s, title: updatedSession.title } : s
+        ),
+        currentSession: state.currentSession?.id === sessionId
+          ? { ...state.currentSession, title: updatedSession.title }
+          : state.currentSession
+      }));
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to update session'
       });
     }
   },

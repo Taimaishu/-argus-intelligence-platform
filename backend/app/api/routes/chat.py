@@ -49,6 +49,20 @@ def get_chat_session(session_id: int, db: Session = Depends(get_db)):
     return session
 
 
+@router.patch("/chat/sessions/{session_id}", response_model=ChatSessionResponse)
+def update_chat_session(
+    session_id: int, request: ChatSessionCreate, db: Session = Depends(get_db)
+):
+    """Update a chat session title."""
+    session = chat_service.update_session(db, session_id, title=request.title)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session {session_id} not found",
+        )
+    return session
+
+
 @router.delete("/chat/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_chat_session(session_id: int, db: Session = Depends(get_db)):
     """Delete a chat session."""
