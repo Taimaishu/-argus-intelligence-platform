@@ -125,43 +125,206 @@ Argus is a privacy-focused, local-first intelligence platform that combines docu
 - Node.js 18+
 - Ollama (for local LLM)
 
-### Backend Setup
+### Quick Start for Linux/macOS
+
+#### Backend Setup
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 
 # Create .env file with your API keys (optional)
 # Initialize database (happens automatically on first run)
 ```
 
-### Frontend Setup
+#### Frontend Setup
 
 ```bash
 cd frontend
 npm install
 ```
 
+### Quick Start for Windows
+
+#### Automated Setup (Recommended)
+
+Run the automated setup script in PowerShell:
+
+```powershell
+# Navigate to project directory
+cd path\to\research-tool
+
+# Run the setup script
+.\setup-windows.ps1
+
+# If you get an execution policy error, run:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+This script will:
+- Verify all prerequisites are installed
+- Set up Python virtual environment
+- Install all dependencies
+- Create default .env configuration
+- Download required Ollama models
+
+#### Manual Setup
+
+If you prefer to set up manually:
+
+##### Prerequisites Installation
+
+1. **Install Python 3.13+**
+   - Download from [python.org](https://www.python.org/downloads/)
+   - During installation, check "Add Python to PATH"
+   - Verify: `python --version`
+
+2. **Install Node.js 18+**
+   - Download from [nodejs.org](https://nodejs.org/)
+   - Install with default options
+   - Verify: `node --version` and `npm --version`
+
+3. **Install Ollama**
+   - Download from [ollama.com/download/windows](https://ollama.com/download/windows)
+   - Run the installer
+   - Ollama will start automatically in the system tray
+
+#### Backend Setup (Windows)
+
+```powershell
+# Navigate to project directory
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment (PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# If you get execution policy error, run:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# OR use Command Prompt instead:
+# venv\Scripts\activate.bat
+
+# Install dependencies
+pip install -r requirements.txt
+
+# The database will initialize automatically on first run
+```
+
+#### Frontend Setup (Windows)
+
+```powershell
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+```
+
+#### Ollama Setup (Windows)
+
+```powershell
+# Open Command Prompt or PowerShell
+
+# Pull embedding model
+ollama pull nomic-embed-text
+
+# Pull LLM model (default)
+ollama pull llama3:8b
+
+# OR pull the gurubot model (uncensored, recommended for research)
+ollama pull gurubot/llama3-guru-uncensored:latest
+```
+
+#### Environment Configuration (Windows)
+
+Create a `.env` file in the `backend\` directory:
+
+```env
+# Application
+APP_NAME=Argus Intelligence Platform
+DEBUG=True
+ENVIRONMENT=development
+
+# Database
+DATABASE_URL=sqlite:///./storage/database/research_tool.db
+
+# AI Providers
+DEFAULT_EMBEDDING_PROVIDER=local
+DEFAULT_LLM_PROVIDER=ollama
+
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+OLLAMA_LLM_MODEL=gurubot/llama3-guru-uncensored:latest
+
+# Optional API Keys (only if using cloud AI)
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+
+# OSINT APIs (Optional)
+SHODAN_API_KEY=
+VT_API_KEY=
+HIBP_API_KEY=
+
+# CORS
+CORS_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+```
+
 ## Running the Application
 
-### Start Backend (Terminal 1)
+### Linux/macOS
+
+#### Start Backend (Terminal 1)
 ```bash
 cd backend
 source venv/bin/activate
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Start Frontend (Terminal 2)
+#### Start Frontend (Terminal 2)
 ```bash
 cd frontend
 npm run dev
 ```
 
-Access the application at: **http://localhost:3000**
+### Windows
 
-API documentation at: **http://localhost:8000/docs**
+#### Option 1: Using Convenience Scripts (Recommended)
+
+Simply double-click these files or run them from the command line:
+
+```cmd
+start-backend.bat   # Opens a window with the backend server
+start-frontend.bat  # Opens a window with the frontend server
+```
+
+#### Option 2: Manual Start
+
+**Start Backend (PowerShell/CMD 1)**
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1  # PowerShell
+# OR: venv\Scripts\activate.bat  (Command Prompt)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Start Frontend (PowerShell/CMD 2)**
+```powershell
+cd frontend
+npm run dev
+```
+
+### Access the Application
+
+- **Frontend UI**: http://localhost:5173
+- **Alternative**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/docs
+- **API Health Check**: http://localhost:8000/health
 
 ## Configuration
 
