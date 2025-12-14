@@ -129,7 +129,12 @@ class PatternDetector:
 
             if len(documents) < self.min_cluster_size:
                 logger.warning(f"Not enough documents to cluster (need at least {self.min_cluster_size})")
-                return {"clusters": [], "themes": []}
+                return {
+                    "clusters": [],
+                    "themes": [],
+                    "total_documents": len(documents),
+                    "n_clusters": 0
+                }
 
             # Collect document embeddings
             doc_embeddings = []
@@ -160,7 +165,12 @@ class PatternDetector:
 
             if len(doc_embeddings) < self.min_cluster_size:
                 logger.warning("Not enough document embeddings for clustering")
-                return {"clusters": [], "themes": []}
+                return {
+                    "clusters": [],
+                    "themes": [],
+                    "total_documents": len(doc_embeddings),
+                    "n_clusters": 0
+                }
 
             # Determine optimal number of clusters
             if n_clusters is None:
@@ -225,7 +235,13 @@ class PatternDetector:
 
         except Exception as e:
             logger.error(f"Error clustering documents: {e}")
-            return {"clusters": [], "themes": [], "error": str(e)}
+            return {
+                "clusters": [],
+                "themes": [],
+                "total_documents": 0,
+                "n_clusters": 0,
+                "error": str(e)
+            }
 
     def suggest_connections(
         self, document_id: int, db: Session, threshold: Optional[float] = None
@@ -282,7 +298,8 @@ class PatternDetector:
                     "central_documents": [],
                     "isolated_documents": [],
                     "network_density": 0.0,
-                    "total_connections": 0
+                    "total_connections": 0,
+                    "total_documents": len(documents)
                 }
 
             # Build similarity matrix
@@ -341,5 +358,6 @@ class PatternDetector:
                 "isolated_documents": [],
                 "network_density": 0.0,
                 "total_connections": 0,
+                "total_documents": 0,
                 "error": str(e)
             }
