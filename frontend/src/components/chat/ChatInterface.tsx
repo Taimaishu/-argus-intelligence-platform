@@ -185,11 +185,11 @@ export const ChatInterface = () => {
         />
 
         {!currentSession ? (
-          <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
-            <div className="text-center">
-              <Bot className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-700" />
-              <p className="text-lg">Select or create a chat to start</p>
-              <p className="text-sm mt-2">Brainstorm theories and explore connections</p>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center p-8 bg-white/50 dark:bg-gray-800/50 rounded-2xl shadow-lg backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+              <Bot className="w-20 h-20 mx-auto mb-6 text-blue-600 dark:text-blue-400" />
+              <p className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Select or create a chat to start</p>
+              <p className="text-base text-gray-700 dark:text-gray-300">Brainstorm theories and explore connections</p>
             </div>
           </div>
         ) : (
@@ -205,10 +205,12 @@ export const ChatInterface = () => {
               )}
 
               {currentSession.messages.length === 0 && (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <Bot className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-700" />
-                  <p className="text-lg">Start a conversation</p>
-                  <p className="text-sm">Ask about your documents, brainstorm theories, or explore connections</p>
+                <div className="text-center py-12">
+                  <div className="inline-block p-8 bg-white/50 dark:bg-gray-800/50 rounded-2xl shadow-lg backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+                    <Bot className="w-20 h-20 mx-auto mb-6 text-blue-600 dark:text-blue-400" />
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Start a conversation</p>
+                    <p className="text-base text-gray-700 dark:text-gray-300">Ask about your documents, brainstorm theories, or explore connections</p>
+                  </div>
                 </div>
               )}
 
