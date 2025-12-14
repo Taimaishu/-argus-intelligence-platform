@@ -7,6 +7,7 @@ from ..config import settings
 from ..models.database_models import ChatSession, ChatMessage, Document, DocumentChunk
 from ..utils.logger import logger
 from .multi_provider_chat import MultiProviderChat
+from .content_extractor import ContentExtractor
 
 
 class ChatService:
@@ -14,6 +15,7 @@ class ChatService:
 
     def __init__(self):
         self.multi_provider = MultiProviderChat()
+        self.content_extractor = ContentExtractor()
 
     def create_session(self, db: Session, title: str = "New Chat") -> ChatSession:
         """Create a new chat session."""
@@ -98,17 +100,42 @@ class ChatService:
         db.commit()
 
         try:
+            # Extract content from URLs in the message
+            extracted_content = []
+            url_content_context = ""
+
+            try:
+                extracted_content = self.content_extractor.extract_all_content(message)
+                if extracted_content:
+                    url_content_context = (
+                        self.content_extractor.format_content_for_context(
+                            extracted_content
+                        )
+                    )
+                    logger.info(
+                        f"Extracted content from {len(extracted_content)} URL(s)"
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to extract URL content: {e}")
+
             # Build message history
             messages = []
 
             # System message with context
             system_prompt = """You are a research assistant helping with document analysis and investigation.
 You help users brainstorm theories, find connections between documents, and explore research topics.
-Be concise, insightful, and focused on helping the user discover patterns and insights."""
+Be concise, insightful, and focused on helping the user discover patterns and insights.
+
+When the user shares YouTube videos or web links, you can view their content and provide analysis, summaries,
+key insights, and answer questions about them. Reference specific points from the content in your responses."""
 
             if include_document_context:
                 doc_context = self.get_document_context(db, num_docs=10)
                 system_prompt += f"\n\n{doc_context}"
+
+            # Add extracted URL content as context
+            if url_content_context:
+                system_prompt += url_content_context
 
             messages.append({"role": "system", "content": system_prompt})
 

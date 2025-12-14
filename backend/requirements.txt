@@ -36,6 +36,7 @@ requests==2.32.3
 # OSINT Tools
 dnspython==2.7.0
 beautifulsoup4==4.12.3
+youtube-transcript-api==0.6.2
 
 # Testing
 pytest==8.3.4
