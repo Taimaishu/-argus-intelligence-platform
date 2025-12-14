@@ -127,11 +127,43 @@ Argus is a privacy-focused, local-first intelligence platform that combines docu
 
 ### Quick Start for Linux/macOS
 
-#### Backend Setup
+#### Option 1: Using Makefile (Recommended)
+
+The easiest way to set up and run the project:
+
+```bash
+# Check prerequisites
+make check
+
+# Complete setup (backend + frontend + models)
+make setup
+
+# Or selective setup:
+make setup-backend   # Backend only
+make setup-frontend  # Frontend only
+make setup-models    # Download Ollama models only
+
+# Start servers
+make start-backend   # In one terminal
+make start-frontend  # In another terminal
+
+# Or start both (requires tmux)
+make start
+
+# Clean build artifacts
+make clean
+
+# See all available targets
+make help
+```
+
+#### Option 2: Manual Setup
+
+##### Backend Setup
 
 ```bash
 cd backend
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
@@ -139,7 +171,7 @@ pip install -r requirements.txt
 # Initialize database (happens automatically on first run)
 ```
 
-#### Frontend Setup
+##### Frontend Setup
 
 ```bash
 cd frontend
@@ -150,25 +182,37 @@ npm install
 
 #### Automated Setup (Recommended)
 
-Run the automated setup script in PowerShell:
+Run the hardened, production-ready setup script in PowerShell:
 
 ```powershell
 # Navigate to project directory
 cd path\to\research-tool
 
-# Run the setup script
+# Full setup (everything)
 .\setup-windows.ps1
+
+# Or selective setup:
+.\setup-windows.ps1 -Backend     # Backend only
+.\setup-windows.ps1 -Frontend    # Frontend only
+.\setup-windows.ps1 -Models      # Download models only
+.\setup-windows.ps1 -SkipModels  # Skip model download
+.\setup-windows.ps1 -Force       # Force reinstall
 
 # If you get an execution policy error, run:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Get help:
+Get-Help .\setup-windows.ps1 -Full
 ```
 
-This script will:
-- Verify all prerequisites are installed
-- Set up Python virtual environment
-- Install all dependencies
-- Create default .env configuration
-- Download required Ollama models
+**Features:**
+- ✅ Compatible with PowerShell 5.1+ and PowerShell 7+
+- ✅ Idempotent (safe to run multiple times)
+- ✅ Comprehensive error handling and validation
+- ✅ Checks existing installations before reinstalling
+- ✅ Supports selective setup (backend/frontend/models)
+- ✅ Proper exit codes for CI/CD integration
+- ✅ Works with python, python3, or py commands
 
 #### Manual Setup
 
