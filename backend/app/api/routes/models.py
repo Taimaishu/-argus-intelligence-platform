@@ -69,7 +69,7 @@ def list_ollama_models():
         for model in models_list.get("models", []):
             models.append(
                 {
-                    "name": model["name"],
+                    "name": model.get("model", model.get("name", "unknown")),
                     "provider": "ollama",
                     "size": model.get("size", "unknown"),
                     "modified": model.get("modified_at", ""),
@@ -165,7 +165,7 @@ def get_available_models():
         for model in models_list.get("models", []):
             available["ollama"].append(
                 {
-                    "name": model["name"],
+                    "name": model.get("model", model.get("name", "unknown")),
                     "size": model.get("size", "unknown"),
                     "available": True,
                 }
