@@ -46,8 +46,8 @@ export const useTTS = (options: UseTTSOptions = {}) => {
     };
   }, [selectedVoice]);
 
-  const speak = useCallback((text: string) => {
-    if (!text || !isEnabled) return;
+  const speakAlways = useCallback((text: string) => {
+    if (!text) return;
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
@@ -70,7 +70,12 @@ export const useTTS = (options: UseTTSOptions = {}) => {
 
     utteranceRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-  }, [isEnabled, rate, pitch, volume, selectedVoice]);
+  }, [rate, pitch, volume, selectedVoice]);
+
+  const speak = useCallback((text: string) => {
+    if (!isEnabled) return;
+    speakAlways(text);
+  }, [isEnabled, speakAlways]);
 
   const stop = useCallback(() => {
     window.speechSynthesis.cancel();
@@ -99,6 +104,7 @@ export const useTTS = (options: UseTTSOptions = {}) => {
     setSelectedVoice,
     setIsEnabled,
     speak,
+    speakAlways,
     stop,
     toggle,
   };

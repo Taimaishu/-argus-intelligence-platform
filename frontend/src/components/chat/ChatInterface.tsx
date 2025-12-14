@@ -28,7 +28,7 @@ export const ChatInterface = () => {
   } = useChatStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isEnabled, isSpeaking, speak, stop, toggle } = useTTS();
+  const { isEnabled, isSpeaking, speak, speakAlways, stop, toggle } = useTTS();
   const lastMessageIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export const ChatInterface = () => {
   return (
     <div className="flex h-[calc(100vh-12rem)] gap-6">
       {/* Sidebar - Session list */}
-      <div className="w-72 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-5 overflow-y-auto shadow-lg backdrop-blur-sm">
+      <div className="w-96 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-5 overflow-y-auto shadow-lg backdrop-blur-sm">
         <button
           onClick={handleNewChat}
           className="w-full mb-6 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-medium"
@@ -203,7 +203,7 @@ export const ChatInterface = () => {
                     {/* Speaker button for assistant messages */}
                     {message.role === 'assistant' && (
                       <button
-                        onClick={() => speak(message.content)}
+                        onClick={() => speakAlways(message.content)}
                         className="self-start px-3 py-1.5 text-xs flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg transition-all border border-gray-300 dark:border-gray-600"
                         title="Read this message aloud"
                       >
