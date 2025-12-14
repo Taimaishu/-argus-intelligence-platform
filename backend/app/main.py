@@ -15,6 +15,7 @@ from app.api.routes import (
     canvas,
     patterns,
     models,
+    tts,
 )
 from app.utils.logger import logger
 from app.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
@@ -73,6 +74,7 @@ app.include_router(osint.router, prefix="/api")
 app.include_router(canvas.router, prefix="/api")
 app.include_router(patterns.router, prefix="/api")
 app.include_router(models.router, prefix="/api")
+app.include_router(tts.router, prefix="/api")
 
 
 @app.get("/")

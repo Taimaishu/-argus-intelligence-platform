@@ -1,183 +1,118 @@
 /**
- * Text-to-Speech hook using Web Speech API
+ * Text-to-Speech hook using Backend TTS API (gTTS)
+ * Works reliably on all platforms including Linux
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { getApiUrl } from '../config/api';
 
 interface UseTTSOptions {
   autoSpeak?: boolean;
-  rate?: number;
-  pitch?: number;
-  volume?: number;
+  lang?: string;
 }
+
+const API_URL = getApiUrl('/api');
 
 export const useTTS = (options: UseTTSOptions = {}) => {
   const {
     autoSpeak = false,
-    rate = 1,
-    pitch = 1,
-    volume = 1,
+    lang = 'en',
   } = options;
 
   const [isEnabled, setIsEnabled] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Load available voices with retry
-  useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 10;
-
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-
-      if (availableVoices.length === 0 && retryCount < maxRetries) {
-        // Voices not loaded yet, retry
-        retryCount++;
-        setTimeout(loadVoices, 100);
-        return;
-      }
-
-      if (availableVoices.length > 0) {
-        console.log(`Loaded ${availableVoices.length} voices:`, availableVoices.map(v => v.name));
-        setVoices(availableVoices);
-
-        // Try to select a good default voice (prefer English)
-        if (!selectedVoice) {
-          const englishVoice = availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
-          setSelectedVoice(englishVoice);
-          console.log('Selected voice:', englishVoice?.name);
-        }
-      } else {
-        console.warn('No voices available after retries');
-      }
-    };
-
-    // Try loading immediately
-    loadVoices();
-
-    // Also listen for voiceschanged event
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
-  }, [selectedVoice]);
-
-  const speakAlways = useCallback((text: string) => {
+  const speakAlways = useCallback(async (text: string) => {
     if (!text) {
       console.warn('No text provided to speak');
       return;
     }
 
-    // Check if speech synthesis is supported
-    if (!window.speechSynthesis) {
-      console.error('Speech synthesis not supported in this browser');
-      alert('Text-to-speech is not supported in your browser. Please use Chrome, Edge, Safari, or Firefox.');
+    if (text.length > 5000) {
+      alert('Text too long for TTS (max 5000 characters)');
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
+    try {
+      console.log('🎤 Requesting TTS from backend...', {
+        textLength: text.length,
+        textPreview: text.substring(0, 50) + '...'
+      });
 
-    // Use a longer delay and ensure voices are loaded
-    setTimeout(() => {
-      try {
-        // Force reload voices
-        const availableVoices = window.speechSynthesis.getVoices();
-        console.log('Available voices:', availableVoices.length);
-
-        if (availableVoices.length === 0) {
-          console.error('No voices available');
-          alert('No voices available. Please wait a moment and try again, or restart your browser.');
-          return;
-        }
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = rate;
-        utterance.pitch = pitch;
-        utterance.volume = volume;
-        utterance.lang = 'en-US';
-
-        // Select voice
-        const voice = selectedVoice || availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
-        if (voice) {
-          utterance.voice = voice;
-          console.log('Using voice:', voice.name);
-        }
-
-        utterance.onstart = () => {
-          console.log('✓ Speech started successfully');
-          setIsSpeaking(true);
-        };
-
-        utterance.onend = () => {
-          console.log('✓ Speech ended');
-          setIsSpeaking(false);
-        };
-
-        utterance.onpause = () => {
-          console.log('Speech paused');
-        };
-
-        utterance.onresume = () => {
-          console.log('Speech resumed');
-        };
-
-        utterance.onerror = (e) => {
-          console.error('✗ Speech synthesis error:', {
-            error: e.error,
-            message: e.message,
-            type: e.type
-          });
-
-          let errorMsg = `Speech error: ${e.error}`;
-          if (e.error === 'not-allowed') {
-            errorMsg += '\n\nYour browser blocked speech. Please:\n1. Check browser permissions\n2. Make sure audio is not muted\n3. Try interacting with the page first (click something)';
-          } else if (e.error === 'network') {
-            errorMsg += '\n\nNetwork error. Check your internet connection.';
-          }
-
-          alert(errorMsg);
-          setIsSpeaking(false);
-        };
-
-        console.log('▶ Starting speech synthesis:', {
-          textLength: text.length,
-          textPreview: text.substring(0, 50) + '...',
-          voice: utterance.voice?.name,
-          rate,
-          pitch,
-          volume
-        });
-
-        utteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
-
-        // Verify it started
-        setTimeout(() => {
-          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
-            console.error('✗ Speech did not start');
-            alert('Speech did not start. Your browser may have blocked it. Try clicking the button again.');
-          }
-        }, 500);
-      } catch (error) {
-        console.error('Exception in speakAlways:', error);
-        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setIsSpeaking(false);
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
-    }, 250);
-  }, [rate, pitch, volume, selectedVoice]);
 
-  const speak = useCallback((text: string) => {
+      setIsSpeaking(true);
+
+      // Call backend TTS API
+      const response = await fetch(`${API_URL}/tts/speak`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          lang,
+          slow: false
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'TTS request failed');
+      }
+
+      // Get audio blob
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      console.log('✓ TTS audio received, playing...');
+
+      // Create and play audio
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onplay = () => {
+        console.log('✓ Audio playback started');
+        setIsSpeaking(true);
+      };
+
+      audio.onended = () => {
+        console.log('✓ Audio playback ended');
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = (e) => {
+        console.error('✗ Audio playback error:', e);
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        alert('Failed to play audio. Check your browser audio settings.');
+      };
+
+      await audio.play();
+
+    } catch (error) {
+      console.error('✗ TTS error:', error);
+      setIsSpeaking(false);
+      alert(`TTS failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }, [lang]);
+
+  const speak = useCallback(async (text: string) => {
     if (!isEnabled) return;
-    speakAlways(text);
+    await speakAlways(text);
   }, [isEnabled, speakAlways]);
 
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     setIsSpeaking(false);
   }, []);
 
@@ -188,19 +123,12 @@ export const useTTS = (options: UseTTSOptions = {}) => {
     }
   }, [isSpeaking, stop]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
-
   return {
     isEnabled,
     isSpeaking,
-    voices,
-    selectedVoice,
-    setSelectedVoice,
+    voices: [], // Not used with backend TTS
+    selectedVoice: null, // Not used with backend TTS
+    setSelectedVoice: () => {}, // Not used with backend TTS
     setIsEnabled,
     speak,
     speakAlways,
