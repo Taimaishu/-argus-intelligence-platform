@@ -1,4 +1,30 @@
-"""Image search service for finding relevant images for entities.
+"""
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                        ⚠️  DO NOT BREAK - READ FIRST  ⚠️                  ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+CRITICAL: This file contains intentional, stable behavior that has been
+carefully tested and documented. v1.x prioritizes behavior preservation.
+
+BEFORE MAKING ANY CHANGES:
+1. Read INTENTIONAL_BEHAVIOR_DO_NOT_CHANGE.md in the project root
+2. Ensure you have full test coverage for ALL affected behaviors
+3. Get explicit review approval before refactoring
+4. DO NOT "clean up", "optimize", or "generalize" without review
+
+WHY THIS GUARD EXISTS:
+- Name mappings, query enhancements, and validation thresholds are calibrated
+- Each hardcoded value was added after observing real-world failures
+- "Improvements" without tests have historically broken photo accuracy
+- This code works correctly - do not fix what isn't broken
+
+If you believe a change is necessary, first ask: "Will this alter output?"
+If yes → Stop and review the documentation
+If no → Proceed with caution and add tests
+
+═══════════════════════════════════════════════════════════════════════════
+
+Image search service for finding relevant images for entities.
 
 SAFETY IMPROVEMENTS ADDED (behavior unchanged):
 - Defensive guards for null/empty inputs

@@ -1,4 +1,30 @@
-"""Automatic entity enrichment service - runs in background for all entities.
+"""
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                        ⚠️  DO NOT BREAK - READ FIRST  ⚠️                  ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+CRITICAL: This file contains intentional, stable behavior that has been
+carefully tested and documented. v1.x prioritizes behavior preservation.
+
+BEFORE MAKING ANY CHANGES:
+1. Read INTENTIONAL_BEHAVIOR_DO_NOT_CHANGE.md in the project root
+2. Ensure you have full test coverage for ALL affected behaviors
+3. Get explicit review approval before refactoring
+4. DO NOT "clean up", "optimize", or "generalize" without review
+
+WHY THIS GUARD EXISTS:
+- Name mappings, skip types, and AI thresholds are calibrated
+- Each hardcoded value was added after observing real-world failures
+- Regex patterns and title extraction are tuned for investigation context
+- This code works correctly - do not fix what isn't broken
+
+If you believe a change is necessary, first ask: "Will this alter output?"
+If yes → Stop and review the documentation
+If no → Proceed with caution and add tests
+
+═══════════════════════════════════════════════════════════════════════════
+
+Automatic entity enrichment service - runs in background for all entities.
 
 SAFETY IMPROVEMENTS ADDED (behavior unchanged):
 - Defensive guards for null/empty inputs
