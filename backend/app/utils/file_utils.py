@@ -65,9 +65,9 @@ def ensure_upload_dir() -> Path:
     Ensure upload directory exists.
 
     Returns:
-        Path to upload directory
+        Path to upload directory (absolute path)
     """
-    upload_dir = Path(settings.UPLOAD_DIR)
+    upload_dir = Path(settings.UPLOAD_DIR).resolve()  # Convert to absolute path
     upload_dir.mkdir(parents=True, exist_ok=True)
     return upload_dir
 

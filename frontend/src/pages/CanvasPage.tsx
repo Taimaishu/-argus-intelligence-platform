@@ -10,38 +10,93 @@ import ReactFlow, {
   type Connection,
   BackgroundVariant,
   Panel,
+  ReactFlowProvider,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Plus, FileText, Lightbulb, StickyNote, Save, Trash2 } from 'lucide-react';
+import {
+  Plus, FileText, Lightbulb, StickyNote, Save, Trash2,
+  Sparkles, Network, MessageSquare, ChevronLeft, ChevronRight, Image
+} from 'lucide-react';
 
 import { useCanvasStore } from '../store/useCanvasStore';
+import { useForceDirectedLayout } from '../hooks/useForceDirectedLayout';
+import { getApiUrl } from '../config/api';
+
+// Original node types
 import { DocumentNode } from '../components/canvas/DocumentNode';
 import { InsightNode } from '../components/canvas/InsightNode';
 import { NoteNode } from '../components/canvas/NoteNode';
 
+// Entity node types
+import { PersonNode } from '../components/canvas/PersonNode';
+import { OrganizationNode } from '../components/canvas/OrganizationNode';
+import { LocationNode } from '../components/canvas/LocationNode';
+import { DateNode } from '../components/canvas/DateNode';
+import { EventNode } from '../components/canvas/EventNode';
+import { VehicleNode } from '../components/canvas/VehicleNode';
+import { FinancialNode } from '../components/canvas/FinancialNode';
+import { PhoneNode } from '../components/canvas/PhoneNode';
+import { EmailNode } from '../components/canvas/EmailNode';
+import { AddressNode } from '../components/canvas/AddressNode';
+
+// Canvas chat panel
+import { CanvasChatPanel } from '../components/canvas/CanvasChatPanel';
+
+// Entity detail panel
+import { EntityDetailPanel } from '../components/canvas/EntityDetailPanel';
+
+// AI Provider Selector
+import { AIProviderSelector } from '../components/common/AIProviderSelector';
+
 // Define custom node types
 const nodeTypes = {
+  // Original types
   document: DocumentNode,
   insight: InsightNode,
   note: NoteNode,
+  // Entity types
+  person: PersonNode,
+  organization: OrganizationNode,
+  location: LocationNode,
+  date: DateNode,
+  event: EventNode,
+  vehicle: VehicleNode,
+  financial: FinancialNode,
+  phone: PhoneNode,
+  email: EmailNode,
+  address: AddressNode,
 };
 
-export const CanvasPage = () => {
+const CanvasPageInner = () => {
   const {
     nodes,
     edges,
     isLoading,
     isSaving,
+    isGenerating,
+    generationProgress,
     onNodesChange,
     onEdgesChange,
     addNode,
     addEdge: addEdgeToStore,
+    deleteNode,
     loadCanvas,
     saveCanvas,
     clearCanvas,
+    autoGenerateEpstein,
+    highlightNodes,
+    setNodes,
   } = useCanvasStore();
 
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedLayout, setSelectedLayout] = useState<'hierarchical' | 'force_directed' | 'circular'>('hierarchical');
+  const [selectedEntity, setSelectedEntity] = useState<any>(null);
+  const [isSearchingPhotos, setIsSearchingPhotos] = useState(false);
+  const [photoSearchResults, setPhotoSearchResults] = useState<any>(null);
+  const { fitView } = useReactFlow();
+  const { applyLayout } = useForceDirectedLayout();
 
   // Load canvas on mount
   useEffect(() => {
@@ -61,6 +116,11 @@ export const CanvasPage = () => {
     },
     [addEdgeToStore]
   );
+
+  // Handle node click to show entity details
+  const onNodeClick = useCallback((event: React.MouseEvent, node: any) => {
+    setSelectedEntity(node);
+  }, []);
 
   // Add new node
   const handleAddNode = (type: 'document' | 'insight' | 'note') => {
@@ -87,6 +147,136 @@ export const CanvasPage = () => {
     }
   };
 
+  // Auto-generate from Epstein files
+  const handleAutoGenerate = async () => {
+    if (nodes.length > 0) {
+      const confirmed = confirm(
+        'This will replace the current canvas with auto-generated content. Continue?'
+      );
+      if (!confirmed) return;
+    }
+
+    await autoGenerateEpstein();
+
+    // Fit view after generation
+    setTimeout(() => {
+      fitView({ padding: 0.2, duration: 800 });
+    }, 500);
+  };
+
+  // Find photos for all entities
+  const handleFindAllPhotos = async () => {
+    setIsSearchingPhotos(true);
+    setPhotoSearchResults(null);
+
+    try {
+      const response = await fetch(getApiUrl('/api/canvas/search-all-images'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const results = await response.json();
+        setPhotoSearchResults(results);
+
+        // Reload canvas to show new images
+        await loadCanvas();
+
+        // Show results
+        const message = `Photo search complete!\n\nTotal entities: ${results.total}\nPhotos found: ${results.found}\nAlready had photos: ${results.skipped}\n\nUpdated entities:\n${results.updated.map((u: any) => `- ${u.name}`).join('\n')}`;
+        alert(message);
+      } else {
+        throw new Error('Failed to search for photos');
+      }
+    } catch (error) {
+      console.error('Photo search error:', error);
+      alert('Failed to search for photos. Check console for details.');
+    } finally {
+      setIsSearchingPhotos(false);
+    }
+  };
+
+  // Apply force-directed layout
+  const handleApplyLayout = useCallback(async () => {
+    if (nodes.length === 0) return;
+
+    const layoutedNodes = await applyLayout(nodes, edges, {
+      strength: -300,
+      distance: 150,
+      iterations: 300,
+    });
+
+    setNodes(layoutedNodes);
+
+    // Fit view after layout
+    setTimeout(() => {
+      fitView({ padding: 0.2, duration: 800 });
+      saveCanvas();
+    }, 500);
+  }, [nodes, edges, applyLayout, setNodes, fitView, saveCanvas]);
+
+  // Handle canvas actions from chat
+  useEffect(() => {
+    const handleCanvasAction = (event: CustomEvent) => {
+      const action = event.detail;
+
+      switch (action.type) {
+        case 'add_node':
+          if (action.data) {
+            const newNode = {
+              id: `${action.data.type}-${Date.now()}-${Math.random()}`,
+              type: action.data.type,
+              position: {
+                x: Math.random() * 400 + 200,
+                y: Math.random() * 400 + 200,
+              },
+              data: action.data,
+            };
+            addNode(newNode);
+          }
+          break;
+
+        case 'remove_node':
+          if (action.node_id) {
+            deleteNode(action.node_id);
+          }
+          break;
+
+        case 'highlight_nodes':
+          if (action.node_ids) {
+            highlightNodes(action.node_ids);
+          }
+          break;
+
+        case 'create_edge':
+          if (action.source && action.target) {
+            const newEdge = {
+              id: `edge-${Date.now()}-${Math.random()}`,
+              source: action.source,
+              target: action.target,
+              type: 'default',
+              data: { label: action.label },
+            };
+            addEdgeToStore(newEdge);
+          }
+          break;
+
+        case 'regenerate_layout':
+          handleApplyLayout();
+          break;
+
+        default:
+          console.warn('Unknown canvas action:', action.type);
+      }
+    };
+
+    window.addEventListener('canvas-action', handleCanvasAction as EventListener);
+
+    return () => {
+      window.removeEventListener('canvas-action', handleCanvasAction as EventListener);
+    };
+  }, [addNode, deleteNode, highlightNodes, addEdgeToStore, handleApplyLayout]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
@@ -100,44 +290,99 @@ export const CanvasPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Investigation Canvas</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Visualize connections between documents, insights, and notes
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Investigation Canvas</h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Visualize connections between entities, documents, and insights
+              </p>
+            </div>
+            {/* AI Provider Selector */}
+            <AIProviderSelector />
+          </div>
+        </div>
+
+        {/* Chat Toggle */}
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105 ${
+            isChatOpen
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
+              : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600'
+          }`}
+        >
+          <MessageSquare className="w-5 h-5" />
+          {isChatOpen ? 'Hide Chat' : 'Show Chat'}
+          {isChatOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </div>
 
-      {/* Canvas */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden h-[calc(100vh-280px)]">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          attributionPosition="bottom-right"
+      {/* Split View: Canvas + Chat */}
+      <div className="flex gap-4 h-[calc(100vh-280px)]">
+        {/* Canvas Container */}
+        <div
+          className={`bg-white dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden transition-all duration-300 ${
+            isChatOpen ? 'w-[70%]' : 'w-full'
+          }`}
         >
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1}
-            className="bg-gray-50 dark:bg-gray-800"
-          />
-          <Controls className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg" />
-          <MiniMap
-            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg"
-            nodeColor={(node) => {
-              if (node.type === 'document') return '#3b82f6';
-              if (node.type === 'insight') return '#eab308';
-              if (node.type === 'note') return '#22c55e';
-              return '#6b7280';
-            }}
-          />
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            nodeTypes={nodeTypes}
+            fitView
+            attributionPosition="bottom-right"
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1}
+              className="bg-gray-50 dark:bg-gray-800"
+            />
+            <Controls className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg" />
+            <MiniMap
+              className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg"
+              nodeColor={(node) => {
+                // Original types
+                if (node.type === 'document') return '#3b82f6';
+                if (node.type === 'insight') return '#eab308';
+                if (node.type === 'note') return '#22c55e';
+                // Entity types
+                if (node.type === 'person') return '#a855f7';
+                if (node.type === 'organization') return '#f97316';
+                if (node.type === 'location') return '#10b981';
+                if (node.type === 'date') return '#ec4899';
+                if (node.type === 'event') return '#eab308';
+                if (node.type === 'vehicle') return '#ef4444';
+                if (node.type === 'financial') return '#059669';
+                if (node.type === 'phone') return '#06b6d4';
+                if (node.type === 'email') return '#6366f1';
+                if (node.type === 'address') return '#8b5cf6';
+                return '#6b7280';
+              }}
+            />
 
-          {/* Toolbar Panel */}
-          <Panel position="top-left" className="space-y-2">
+            {/* Toolbar Panel */}
+            <Panel position="top-left" className="space-y-2">
+            {/* Layout Selector */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Layout Type</label>
+              <select
+                value={selectedLayout}
+                onChange={(e) => setSelectedLayout(e.target.value as any)}
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="hierarchical">Hierarchical (Flow)</option>
+                <option value="force_directed">Force Directed (Organic)</option>
+                <option value="circular">Circular (Ring)</option>
+              </select>
+            </div>
+
             {/* Add Node Menu */}
             <div className="relative">
               <button
@@ -193,7 +438,40 @@ export const CanvasPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+              {/* Auto-generate */}
+              <button
+                onClick={handleAutoGenerate}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-purple-400 disabled:to-pink-400 text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
+              >
+                <Sparkles className="w-5 h-5" />
+                {isGenerating ? `Generating... ${generationProgress}%` : 'Auto-Generate'}
+              </button>
+
+              {/* Find All Photos */}
+              <button
+                onClick={handleFindAllPhotos}
+                disabled={isSearchingPhotos || nodes.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:from-cyan-400 disabled:to-blue-400 text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
+              >
+                <Image className="w-5 h-5" />
+                {isSearchingPhotos ? 'Searching...' : 'Find All Photos'}
+              </button>
+
+              {/* Force Layout */}
+              <button
+                onClick={handleApplyLayout}
+                disabled={nodes.length === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
+              >
+                <Network className="w-5 h-5" />
+                Re-layout
+              </button>
+
+              <div className="h-px bg-gray-300 dark:bg-gray-600 my-1"></div>
+
+              {/* Save */}
               <button
                 onClick={saveCanvas}
                 disabled={isSaving}
@@ -203,6 +481,7 @@ export const CanvasPage = () => {
                 {isSaving ? 'Saving...' : 'Save'}
               </button>
 
+              {/* Clear */}
               <button
                 onClick={handleClearCanvas}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
@@ -213,6 +492,14 @@ export const CanvasPage = () => {
             </div>
           </Panel>
         </ReactFlow>
+        </div>
+
+        {/* Chat Panel - Collapsible */}
+        {isChatOpen && (
+          <div className="w-[30%] bg-white dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden transition-all duration-300">
+            <CanvasChatPanel />
+          </div>
+        )}
       </div>
 
       {/* Instructions */}
@@ -221,7 +508,15 @@ export const CanvasPage = () => {
         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <li className="flex items-start gap-2">
             <span className="text-blue-600 dark:text-blue-400">•</span>
-            <span><strong>Add nodes:</strong> Click "Add Node" to create document, insight, or note nodes</span>
+            <span><strong>Auto-Generate:</strong> Click "Auto-Generate" to create a knowledge graph from Epstein documents</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-blue-600 dark:text-blue-400">•</span>
+            <span><strong>Re-layout:</strong> Apply force-directed layout to organize nodes organically</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-blue-600 dark:text-blue-400">•</span>
+            <span><strong>Add nodes:</strong> Click "Add Node" to manually create nodes</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600 dark:text-blue-400">•</span>
@@ -229,18 +524,27 @@ export const CanvasPage = () => {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600 dark:text-blue-400">•</span>
-            <span><strong>Move nodes:</strong> Drag nodes to reposition them on the canvas</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400">•</span>
-            <span><strong>Delete:</strong> Hover over a node to reveal the delete button</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400">•</span>
-            <span><strong>Auto-save:</strong> Changes are automatically saved after 2 seconds</span>
+            <span><strong>Chat panel:</strong> Click "Show Chat" to open the AI assistant for canvas manipulation</span>
           </li>
         </ul>
       </div>
+
+      {/* Entity Detail Panel - Shows when clicking entities */}
+      {selectedEntity && (
+        <EntityDetailPanel
+          entity={selectedEntity}
+          onClose={() => setSelectedEntity(null)}
+        />
+      )}
     </div>
+  );
+};
+
+// Wrapper component to provide ReactFlow context
+export const CanvasPage = () => {
+  return (
+    <ReactFlowProvider>
+      <CanvasPageInner />
+    </ReactFlowProvider>
   );
 };

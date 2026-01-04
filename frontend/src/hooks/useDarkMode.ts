@@ -16,17 +16,30 @@ export const useDarkMode = () => {
   });
 
   useEffect(() => {
-    // Apply dark mode class to document root
+    // Ensure document element exists
+    const root = document.documentElement;
+    if (!root) return;
+
+    // Apply or remove dark mode class
     if (isDark) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      root.style.colorScheme = 'dark';
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      root.style.colorScheme = 'light';
     }
+
     // Persist to localStorage
-    localStorage.setItem('darkMode', String(isDark));
+    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
   }, [isDark]);
 
-  const toggle = () => setIsDark(!isDark);
+  const toggle = () => {
+    setIsDark(prev => !prev);
+  };
 
-  return { isDark, toggle };
+  const setDark = (value: boolean) => {
+    setIsDark(value);
+  };
+
+  return { isDark, toggle, setDark };
 };

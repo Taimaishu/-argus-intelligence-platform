@@ -49,7 +49,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   loading: false,
   streaming: false,
   error: null,
-  provider: 'ollama',
+  provider: 'anthropic',
   model: null,
 
   fetchSessions: async () => {

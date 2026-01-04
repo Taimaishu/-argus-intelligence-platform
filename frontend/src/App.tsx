@@ -10,6 +10,8 @@ import { ChatPage } from './pages/ChatPage';
 import { OSINTPage } from './pages/OSINTPage';
 import { CanvasPage } from './pages/CanvasPage';
 import { PatternsPage } from './pages/PatternsPage';
+import { UnredactionPage } from './pages/UnredactionPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
           <Route path="/osint" element={<OSINTPage />} />
           <Route path="/canvas" element={<CanvasPage />} />
           <Route path="/patterns" element={<PatternsPage />} />
+          <Route path="/unredaction" element={<UnredactionPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </MainLayout>
     </BrowserRouter>

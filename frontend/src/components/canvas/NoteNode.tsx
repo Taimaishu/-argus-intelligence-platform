@@ -31,6 +31,21 @@ export const NoteNode = memo(({ id, data }: NodeProps<NoteNodeData>) => {
           <X className="w-3 h-3" />
         </button>
 
+        {/* Image (if available) */}
+        {data.image_url && (
+          <div className="mb-3 -mx-4 -mt-3">
+            <img
+              src={data.image_url}
+              alt={data.label}
+              className="w-full h-32 object-cover rounded-t-lg"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+
+
         {/* Header */}
         <div className="flex items-center gap-2 mb-2">
           <div className="p-1.5 bg-green-500 dark:bg-green-600 rounded">

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # Application Settings
     APP_NAME: str = "Argus Intelligence Platform"
-    DEBUG: bool = True
+    DEBUG: bool = Field(default=False)  # Secure default: False (must explicitly enable for dev)
     ENVIRONMENT: str = "development"
 
     # Database
@@ -57,19 +57,24 @@ class Settings(BaseSettings):
     VT_API_KEY: str = Field(default="")
     HIBP_API_KEY: str = Field(default="")  # Have I Been Pwned
 
-    # CORS Settings
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ]
+    # CORS Settings (secure default: empty list, fails closed)
+    # Set CORS_ORIGINS in .env for development, e.g.:
+    # CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
+    CORS_ORIGINS: List[str] = Field(default_factory=list)
 
     # Logging
     LOG_LEVEL: str = "INFO"
 
     # Security
     SECRET_KEY: str = "your-secret-key-here-change-in-production"
+    API_KEY: str = Field(default="")  # Required for special endpoints when FEATURE_* flags are enabled
+
+    # Rate Limiting (requests per minute)
+    RATE_LIMIT: str = Field(default="100/minute")  # Production-safe default
+
+    # Feature Flags (require explicit enablement)
+    FEATURE_EPSTEIN_MODE: bool = Field(default=False)  # Enable Epstein-specific automation endpoints
+    FEATURE_URL_EXTRACTION: bool = Field(default=False)  # Enable URL extraction in chat (SSRF risk)
 
     # Chunking Strategy
     CHUNK_SIZE: int = 1000  # tokens

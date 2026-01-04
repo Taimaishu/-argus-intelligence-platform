@@ -49,6 +49,12 @@ class Document(Base):
     )
     error_message = Column(Text, nullable=True)
 
+    # Embedding info (separate from processing)
+    embedding_status = Column(
+        SQLEnum(ProcessingStatus), default=ProcessingStatus.PENDING
+    )
+    embedding_error_message = Column(Text, nullable=True)
+
     # Timestamps
     upload_date = Column(DateTime, default=datetime.utcnow, nullable=False)
     processed_date = Column(DateTime, nullable=True)
@@ -299,3 +305,132 @@ class ArtifactTag(Base):
 
     def __repr__(self):
         return f"<ArtifactTag(artifact_id={self.artifact_id}, tag='{self.tag}')>"
+
+
+class Entity(Base):
+    """Extracted entity for knowledge graph."""
+
+    __tablename__ = "entities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String(50), nullable=False, index=True)  # person, organization, etc.
+    name = Column(String(512), nullable=False)
+    normalized_name = Column(String(512), nullable=False, index=True)  # For deduplication
+
+    # Statistics
+    mention_count = Column(Integer, default=1)
+    confidence = Column(Float, default=1.0)  # 0.0 to 1.0
+
+    # Source tracking
+    document_ids = Column(JSON, nullable=True)  # List of document IDs where mentioned
+    extra_data = Column(JSON, nullable=True)  # Additional type-specific data
+
+    # Timestamps
+    first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seen = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    source_relationships = relationship(
+        "EntityRelationship",
+        foreign_keys="EntityRelationship.source_entity_id",
+        back_populates="source_entity",
+        cascade="all, delete-orphan",
+    )
+    target_relationships = relationship(
+        "EntityRelationship",
+        foreign_keys="EntityRelationship.target_entity_id",
+        back_populates="target_entity",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self):
+        return f"<Entity(id={self.id}, type='{self.entity_type}', name='{self.name}')>"
+
+
+class EntityRelationship(Base):
+    """Relationship between two entities."""
+
+    __tablename__ = "entity_relationships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source_entity_id = Column(
+        Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    target_entity_id = Column(
+        Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Relationship metadata
+    relationship_type = Column(String(100), nullable=False)  # works_with, located_in, etc.
+    strength = Column(Float, default=0.5)  # 0.0 to 1.0
+    context = Column(Text, nullable=True)  # Textual evidence
+
+    # Source tracking
+    document_id = Column(
+        Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
+    )
+
+    # Timestamps
+    first_seen = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seen = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    source_entity = relationship(
+        "Entity",
+        foreign_keys=[source_entity_id],
+        back_populates="source_relationships"
+    )
+    target_entity = relationship(
+        "Entity",
+        foreign_keys=[target_entity_id],
+        back_populates="target_relationships"
+    )
+
+    def __repr__(self):
+        return f"<EntityRelationship(id={self.id}, {self.source_entity_id} -> {self.target_entity_id}, type='{self.relationship_type}')>"
+
+
+class EntityKnowledge(Base):
+    """Comprehensive knowledge database for entities."""
+
+    __tablename__ = "entity_knowledge"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Basic identification
+    entity_name = Column(String(255), nullable=False, index=True)  # Original name
+    full_name = Column(String(512), nullable=True)  # Enhanced/full name (e.g., "Prince Andrew")
+    entity_type = Column(String(50), nullable=False)  # person, organization, location, etc.
+
+    # Biographical/descriptive information
+    description = Column(Text, nullable=True)  # Who they are
+    background = Column(Text, nullable=True)  # Background & past activities
+    role_title = Column(String(255), nullable=True)  # Title/position (e.g., "Prince", "President")
+
+    # Investigation context
+    connection_to_investigation = Column(Text, nullable=True)  # Why they're relevant
+    theories = Column(Text, nullable=True)  # AI-generated theories
+    key_associations = Column(JSON, nullable=True)  # List of associated entities
+
+    # Media
+    photo_url = Column(String(512), nullable=True)
+    photo_source = Column(String(255), nullable=True)  # wikipedia, google, etc.
+    photo_attribution = Column(Text, nullable=True)
+
+    # Evidence and sources
+    evidence_excerpts = Column(JSON, nullable=True)  # List of document excerpts
+    document_ids = Column(JSON, nullable=True)  # List of document IDs mentioning this entity
+    mention_count = Column(Integer, default=0)
+
+    # Metadata
+    confidence_score = Column(Float, nullable=True)  # Confidence in identification
+    verification_status = Column(String(50), default="unverified")  # verified, unverified, disputed
+    entity_metadata = Column(JSON, nullable=True)  # Extended metadata (dates, locations, affiliations, etc.)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_analyzed = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<EntityKnowledge(id={self.id}, entity_name='{self.entity_name}', full_name='{self.full_name}')>"

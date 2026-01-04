@@ -13,6 +13,11 @@ interface CanvasState {
   isSaving: boolean;
   error: string | null;
 
+  // New auto-generation state
+  highlightedNodes: string[];
+  isGenerating: boolean;
+  generationProgress: number;
+
   // Actions
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
@@ -28,6 +33,14 @@ interface CanvasState {
   loadCanvas: () => Promise<void>;
   saveCanvas: () => Promise<void>;
   clearCanvas: () => Promise<void>;
+
+  // New auto-generation actions
+  autoGenerateFromDocuments: (documentIds: number[], layoutType?: string) => Promise<void>;
+  autoGenerateEpstein: () => Promise<void>;
+  extractEntities: (documentId: number) => Promise<any>;
+  highlightNodes: (nodeIds: string[]) => void;
+  clearHighlight: () => void;
+  applyForceDirectedLayout: () => void;
 }
 
 const API_BASE = getApiUrl('/api');
@@ -38,6 +51,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   isLoading: false,
   isSaving: false,
   error: null,
+
+  // Auto-generation state
+  highlightedNodes: [],
+  isGenerating: false,
+  generationProgress: 0,
 
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
@@ -210,5 +228,141 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       console.error('Failed to clear canvas:', err);
       set({ error: 'Failed to clear canvas' });
     }
+  },
+
+  // Auto-generation actions
+  autoGenerateFromDocuments: async (documentIds: number[], layoutType: string = 'force_directed') => {
+    set({ isGenerating: true, generationProgress: 0, error: null });
+
+    try {
+      set({ generationProgress: 25 });
+
+      const response = await fetch(`${API_BASE}/canvas/auto-generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          document_ids: documentIds,
+          layout_type: layoutType,
+          include_weak_links: false,
+          min_confidence: 0.5,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to auto-generate canvas');
+
+      set({ generationProgress: 75 });
+
+      const data = await response.json();
+
+      set({
+        nodes: data.nodes || [],
+        edges: data.edges || [],
+        isGenerating: false,
+        generationProgress: 100,
+      });
+
+      console.log(`Generated ${data.nodes?.length || 0} nodes and ${data.edges?.length || 0} edges`);
+    } catch (err) {
+      console.error('Failed to auto-generate canvas:', err);
+      set({
+        error: 'Failed to auto-generate canvas',
+        isGenerating: false,
+        generationProgress: 0,
+      });
+    }
+  },
+
+  autoGenerateEpstein: async () => {
+    set({ isGenerating: true, generationProgress: 0, error: null });
+
+    try {
+      set({ generationProgress: 25 });
+
+      const response = await fetch(`${API_BASE}/canvas/auto-generate-epstein`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) throw new Error('Failed to generate Epstein canvas');
+
+      set({ generationProgress: 75 });
+
+      const data = await response.json();
+
+      set({
+        nodes: data.nodes || [],
+        edges: data.edges || [],
+        isGenerating: false,
+        generationProgress: 100,
+      });
+
+      console.log(`Generated Epstein canvas with ${data.nodes?.length || 0} nodes and ${data.edges?.length || 0} edges`);
+    } catch (err) {
+      console.error('Failed to generate Epstein canvas:', err);
+      set({
+        error: 'Failed to generate Epstein canvas',
+        isGenerating: false,
+        generationProgress: 0,
+      });
+    }
+  },
+
+  extractEntities: async (documentId: number) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await fetch(`${API_BASE}/canvas/extract-entities/${documentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) throw new Error('Failed to extract entities');
+
+      const data = await response.json();
+      set({ isLoading: false });
+
+      return data;
+    } catch (err) {
+      console.error('Failed to extract entities:', err);
+      set({
+        error: 'Failed to extract entities',
+        isLoading: false,
+      });
+      return null;
+    }
+  },
+
+  highlightNodes: (nodeIds: string[]) => {
+    set({ highlightedNodes: nodeIds });
+
+    // Auto-clear highlight after 5 seconds
+    setTimeout(() => {
+      if (get().highlightedNodes.length > 0) {
+        set({ highlightedNodes: [] });
+      }
+    }, 5000);
+  },
+
+  clearHighlight: () => {
+    set({ highlightedNodes: [] });
+  },
+
+  applyForceDirectedLayout: () => {
+    const { nodes } = get();
+
+    // Placeholder - will be replaced with D3 force-directed layout in CanvasPage
+    // For now, just trigger a re-layout by updating node positions slightly
+    const updatedNodes = nodes.map((node) => ({
+      ...node,
+      position: {
+        x: node.position.x + (Math.random() - 0.5) * 10,
+        y: node.position.y + (Math.random() - 0.5) * 10,
+      },
+    }));
+
+    set({ nodes: updatedNodes });
+
+    // Save the new layout
+    setTimeout(() => get().saveCanvas(), 1000);
   },
 }));

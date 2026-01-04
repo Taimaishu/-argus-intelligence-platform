@@ -122,3 +122,67 @@ async def send_chat_message(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/chat/canvas-stream")
+async def canvas_chat_stream(request: dict, db: Session = Depends(get_db)):
+    """
+    Canvas-specific chat with canvas manipulation capabilities.
+
+    Expects:
+    - message: str
+    - canvas_context: dict with nodes and edges
+    - provider: str
+    - model: str (optional)
+    - session_id: str (optional, defaults to 'canvas-session')
+
+    Returns SSE stream with text chunks and action commands.
+    """
+    message = request.get("message", "")
+    canvas_context = request.get("canvas_context", {})
+    provider = request.get("provider", "ollama")
+    model = request.get("model")
+    session_id_str = request.get("session_id", "canvas-session")
+
+    # Get or create canvas session (use ID 9999 for canvas chat)
+    canvas_session_id = 9999
+    session = chat_service.get_session(db, canvas_session_id)
+    if not session:
+        # Create canvas session if it doesn't exist
+        session = chat_service.create_session(
+            db,
+            title="Canvas Assistant",
+            system_prompt="You are a canvas assistant that helps manipulate investigation canvases."
+        )
+        canvas_session_id = session.id
+    session_id = canvas_session_id
+
+    async def event_stream():
+        """Generate SSE events with canvas actions."""
+        try:
+            async for chunk in chat_service.chat_with_canvas_control(
+                db=db,
+                session_id=session_id,
+                message=message,
+                canvas_context=canvas_context,
+                provider=provider,
+                model=model,
+            ):
+                yield f"data: {chunk}\n\n"
+        except Exception as e:
+            print(f"Canvas chat error: {e}")
+            import traceback
+            traceback.print_exc()
+            yield f"data: [ERROR] {str(e)}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

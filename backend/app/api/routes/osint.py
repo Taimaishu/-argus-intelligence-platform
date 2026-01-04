@@ -33,12 +33,12 @@ class ArtifactResponse(BaseModel):
     value: str
     analysis_status: str
     threat_level: str
-    analysis_data: dict = None
+    analysis_data: Optional[dict] = None
     first_seen: str
-    last_analyzed: str = None
-    document_id: int = None
+    last_analyzed: Optional[str] = None
+    document_id: Optional[int] = None
     extracted: bool
-    notes: str = None
+    notes: Optional[str] = None
 
     class Config:
         from_attributes = True

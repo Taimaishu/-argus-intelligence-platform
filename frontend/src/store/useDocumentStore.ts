@@ -16,6 +16,7 @@ interface DocumentStore {
   uploadDocument: (file: File) => Promise<void>;
   deleteDocument: (id: number) => Promise<void>;
   refreshDocument: (id: number) => Promise<void>;
+  reprocessDocument: (id: number) => Promise<void>;
 }
 
 export const useDocumentStore = create<DocumentStore>((set) => ({
@@ -77,6 +78,38 @@ export const useDocumentStore = create<DocumentStore>((set) => ({
       }));
     } catch (error) {
       console.error('Failed to refresh document:', error);
+    }
+  },
+
+  reprocessDocument: async (id: number) => {
+    try {
+      // Update status to pending immediately
+      set(state => ({
+        documents: state.documents.map(doc =>
+          doc.id === id ? { ...doc, processing_status: 'pending' as const, error_message: null } : doc
+        )
+      }));
+
+      await documentsApi.reprocess(id);
+
+      // Refresh the document after a short delay
+      setTimeout(async () => {
+        try {
+          const document = await documentsApi.get(id);
+          set(state => ({
+            documents: state.documents.map(doc =>
+              doc.id === id ? document : doc
+            )
+          }));
+        } catch (error) {
+          console.error('Failed to refresh document after reprocess:', error);
+        }
+      }, 1000);
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to reprocess document'
+      });
+      throw error;
     }
   },
 }));

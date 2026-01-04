@@ -173,6 +173,141 @@ def get_document(document_id: int, db: Session = Depends(get_db)):
     return DocumentResponse.model_validate(document)
 
 
+@router.get("/{document_id}/content")
+def get_document_content(document_id: int, db: Session = Depends(get_db)):
+    """
+    Get the extracted text content of a document from chunks.
+
+    Args:
+        document_id: Document ID
+        db: Database session
+
+    Returns:
+        Document content as text from extracted chunks
+
+    Raises:
+        HTTPException: If document not found or content cannot be read
+    """
+    from app.models.database_models import DocumentChunk
+
+    document = db.query(Document).filter(Document.id == document_id).first()
+
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    try:
+        # Check if document has been processed
+        if document.processing_status == ProcessingStatus.COMPLETED:
+            # Get all chunks for this document, ordered by chunk_index
+            chunks = (
+                db.query(DocumentChunk)
+                .filter(DocumentChunk.document_id == document_id)
+                .order_by(DocumentChunk.chunk_index)
+                .all()
+            )
+
+            if chunks:
+                # Combine all chunk text
+                content = "\n\n".join([chunk.chunk_text for chunk in chunks])
+                return {
+                    "content": content,
+                    "filename": document.filename,
+                    "status": "processed",
+                    "chunks": len(chunks)
+                }
+
+        # If not processed or no chunks, try to read raw file as fallback
+        if os.path.exists(document.file_path):
+            # For text files, read directly
+            if document.file_type == DocumentType.TEXT:
+                with open(document.file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                return {
+                    "content": content,
+                    "filename": document.filename,
+                    "status": "raw",
+                    "error": "Document not yet processed" if document.processing_status == ProcessingStatus.PENDING else document.error_message
+                }
+            else:
+                # For other files, return processing status
+                return {
+                    "content": "",
+                    "filename": document.filename,
+                    "status": document.processing_status.value,
+                    "error": document.error_message or "Document is being processed or failed to process. Please wait or check the processing status."
+                }
+        else:
+            raise HTTPException(status_code=404, detail="File not found on disk")
+
+    except Exception as e:
+        logger.error(f"Failed to read document content {document.id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to read file content: {str(e)}")
+
+
+@router.post("/{document_id}/reprocess")
+def reprocess_document(
+    document_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Reprocess a failed or incomplete document.
+
+    CRITICAL: Cleans up old chunks and embeddings before reprocessing.
+
+    Args:
+        document_id: Document ID
+        background_tasks: FastAPI background tasks
+        db: Database session
+
+    Returns:
+        Success message
+
+    Raises:
+        HTTPException: If document not found
+    """
+    document = db.query(Document).filter(Document.id == document_id).first()
+
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    if not os.path.exists(document.file_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+
+    # CRITICAL: Delete old chunks from database (prevents ID conflicts)
+    deleted_chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).delete()
+    logger.info(f"Deleted {deleted_chunks} old chunks for document {document_id}")
+
+    # CRITICAL: Delete old embeddings from vector store (prevents duplicates)
+    try:
+        from app.core.vector_store import VectorStore
+        vector_store = VectorStore()
+        vector_store.delete_by_document(document_id)
+        logger.info(f"Deleted old embeddings for document {document_id}")
+    except Exception as e:
+        logger.error(f"Failed to delete old embeddings: {str(e)}")
+        # Continue anyway - embeddings might not exist
+
+    # Reset BOTH statuses
+    document.processing_status = ProcessingStatus.PENDING
+    document.error_message = None
+    document.embedding_status = ProcessingStatus.PENDING
+    document.embedding_error_message = None
+    db.commit()
+
+    # Add background task to reprocess
+    background_tasks.add_task(
+        process_document_background, document.file_path, document.id
+    )
+
+    return {
+        "message": "Document reprocessing started (old data cleaned)",
+        "document_id": document_id,
+        "status": "pending",
+        "chunks_deleted": deleted_chunks
+    }
+
+
 @router.delete("/{document_id}", status_code=204)
 def delete_document(document_id: int, db: Session = Depends(get_db)):
     """

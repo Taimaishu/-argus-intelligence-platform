@@ -3,7 +3,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { Search, Moon, Sun, MessageSquare, Shield, Network, Sparkles } from 'lucide-react';
+import { Search, Moon, Sun, MessageSquare, Shield, Network, Sparkles, Eye, Settings } from 'lucide-react';
 import { useDarkMode } from '../../hooks/useDarkMode';
 
 export const Header = () => {
@@ -61,15 +61,29 @@ export const Header = () => {
               Patterns
             </Link>
             <Link
+              to="/unredaction"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm flex items-center gap-2 transition-all"
+            >
+              <Eye className="w-4 h-4" />
+              Unredact
+            </Link>
+            <Link
               to="/chat"
               className="px-4 py-2 rounded-lg text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm flex items-center gap-2 transition-all"
             >
               <MessageSquare className="w-4 h-4" />
               Chat
             </Link>
+            <Link
+              to="/settings"
+              className="p-2 rounded-lg text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm ml-2 transition-all"
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </Link>
             <button
               onClick={toggle}
-              className="p-2 rounded-lg text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm ml-2 transition-all"
+              className="p-2 rounded-lg text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm transition-all"
               aria-label="Toggle dark mode"
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

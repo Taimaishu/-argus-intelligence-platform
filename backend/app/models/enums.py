@@ -27,10 +27,23 @@ class ProcessingStatus(str, Enum):
 class NodeType(str, Enum):
     """Canvas node types."""
 
+    # Original node types
     DOCUMENT = "document"
     INSIGHT = "insight"
     NOTE = "note"
     THEME = "theme"
+
+    # Entity node types
+    PERSON = "person"
+    ORGANIZATION = "organization"
+    LOCATION = "location"
+    DATE = "date"
+    EVENT = "event"
+    VEHICLE = "vehicle"
+    FINANCIAL = "financial"
+    PHONE = "phone"
+    EMAIL = "email"
+    ADDRESS = "address"
 
 
 class ArtifactType(str, Enum):

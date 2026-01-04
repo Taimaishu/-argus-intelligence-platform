@@ -13,7 +13,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 60000, // 60 second timeout for most requests
 });
 
 // Add response interceptor for better error handling
@@ -47,6 +47,7 @@ export const documentsApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 300000, // 5 minute timeout for large file uploads
       }
     );
     return response.data;
@@ -66,6 +67,10 @@ export const documentsApi = {
 
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/documents/${id}`);
+  },
+
+  reprocess: async (id: number): Promise<void> => {
+    await apiClient.post(`/api/documents/${id}/reprocess`);
   },
 };
 
