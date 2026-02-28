@@ -33,6 +33,7 @@ class PDFParser(BaseParser):
             # Extract text from all pages
             full_text = ""
             sections = []
+            page_count = len(doc)  # Get page count before closing
 
             for page_num, page in enumerate(doc, start=1):
                 page_text = page.get_text()
@@ -62,7 +63,7 @@ class PDFParser(BaseParser):
                     "creation_date": metadata.get("creationDate"),
                 },
                 sections=sections,
-                page_count=len(doc),
+                page_count=page_count,
             )
 
         except Exception as e:

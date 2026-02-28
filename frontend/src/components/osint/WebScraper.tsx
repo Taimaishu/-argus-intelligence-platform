@@ -198,24 +198,77 @@ export const WebScraper = () => {
             </div>
           )}
 
-          {/* Links & Images Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            {result.links && (
-              <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg text-center">
-                <LinkIcon className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{result.links.length}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Links Found</p>
+          {/* Page Content */}
+          {result.content && (
+            <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Page Content</h3>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  {result.content.substring(0, 1000)}{result.content.length > 1000 ? '...' : ''}
+                </p>
               </div>
-            )}
+            </div>
+          )}
 
-            {result.images && (
-              <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg text-center">
-                <ImageIcon className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{result.images.length}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Images Found</p>
+          {/* Links */}
+          {result.links && result.links.length > 0 && (
+            <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <LinkIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Links Found ({result.links.length})</h3>
               </div>
-            )}
-          </div>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {result.links.slice(0, 50).map((link: any, i: number) => (
+                  <div key={i} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium block truncate"
+                    >
+                      {link.url}
+                    </a>
+                    {link.text && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 truncate">{link.text}</p>
+                    )}
+                  </div>
+                ))}
+                {result.links.length > 50 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
+                    Showing first 50 of {result.links.length} links
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Images */}
+          {result.images && result.images.length > 0 && (
+            <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <ImageIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Images Found ({result.images.length})</h3>
+              </div>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {result.images.slice(0, 20).map((img: string, i: number) => (
+                  <a
+                    key={i}
+                    href={img}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-sm text-blue-600 dark:text-blue-400 hover:underline truncate"
+                  >
+                    {img}
+                  </a>
+                ))}
+                {result.images.length > 20 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
+                    Showing first 20 of {result.images.length} images
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

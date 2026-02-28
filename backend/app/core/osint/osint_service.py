@@ -34,18 +34,26 @@ class OSINTService:
 
         Args:
             db: Database session
-            artifact_type: Type of artifact (ip, domain, email, hash, url)
+            artifact_type: Type of artifact (ip_address, domain, email, hash, url)
             value: Artifact value to analyze
             document_id: Optional source document ID
 
         Returns:
             Artifact database object with analysis results
         """
+        # Validate artifact type
+        artifact_type_upper = artifact_type.upper()
+        if artifact_type_upper not in ArtifactType.__members__:
+            valid_types = ", ".join([t.value for t in ArtifactType])
+            raise ValueError(
+                f"Invalid artifact type '{artifact_type}'. Valid types: {valid_types}"
+            )
+
         # Check if artifact already exists
         existing = (
             db.query(Artifact)
             .filter(
-                Artifact.artifact_type == ArtifactType[artifact_type.upper()],
+                Artifact.artifact_type == ArtifactType[artifact_type_upper],
                 Artifact.value == value,
             )
             .first()
@@ -58,7 +66,7 @@ class OSINTService:
         else:
             # Create new artifact
             artifact = Artifact(
-                artifact_type=ArtifactType[artifact_type.upper()],
+                artifact_type=ArtifactType[artifact_type_upper],
                 value=value,
                 document_id=document_id,
                 analysis_status=AnalysisStatus.ANALYZING,

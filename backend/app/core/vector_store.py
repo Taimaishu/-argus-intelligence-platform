@@ -145,6 +145,48 @@ class VectorStore:
             logger.error(f"Failed to delete from vector store: {str(e)}")
             raise
 
+    def delete_by_document(self, document_id: int):
+        """
+        Delete all embeddings for a specific document.
+
+        Critical for reprocessing: prevents duplicate vectors.
+
+        Args:
+            document_id: ID of the document whose embeddings should be deleted
+        """
+        try:
+            # Delete using metadata filter
+            self.collection.delete(where={"document_id": document_id})
+            logger.info(f"Deleted all embeddings for document {document_id}")
+        except Exception as e:
+            logger.error(f"Failed to delete embeddings for document {document_id}: {str(e)}")
+            raise
+
+    def upsert(
+        self,
+        ids: List[str],
+        embeddings: List[List[float]],
+        documents: List[str],
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+    ):
+        """
+        Upsert embeddings (update if exists, insert if not).
+
+        Args:
+            ids: Unique IDs for each embedding
+            embeddings: List of embedding vectors
+            documents: List of text documents
+            metadatas: Optional list of metadata dicts
+        """
+        try:
+            self.collection.upsert(
+                ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
+            )
+            logger.info(f"Upserted {len(ids)} embeddings to collection")
+        except Exception as e:
+            logger.error(f"Failed to upsert embeddings: {str(e)}")
+            raise
+
     def count(self) -> int:
         """
         Get the number of embeddings in the collection.

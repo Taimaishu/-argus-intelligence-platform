@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Argus
+GenericName=Intelligence Platform
+Comment=Intelligence analysis and investigation platform
+Exec=/home/taimaishu/argus-intelligence-platform/argus-app-launcher.sh
+Icon=/home/taimaishu/argus-intelligence-platform/argus-icon.png
+Terminal=false
+Categories=Office;Development;Network;Security;
+Keywords=intelligence;investigation;analysis;osint;research;
+StartupNotify=true
+Actions=Stop;
+
+[Desktop Action Stop]
+Name=Stop Argus
+Exec=/home/taimaishu/argus-intelligence-platform/argus-app-stop.sh

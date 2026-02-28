@@ -43,6 +43,13 @@ class DocumentProcessor:
         try:
             logger.info(f"Processing document: {document.filename}")
 
+            # Convert relative path to absolute if needed
+            file_path_obj = Path(file_path)
+            if not file_path_obj.is_absolute():
+                file_path_obj = file_path_obj.resolve()
+                file_path = str(file_path_obj)
+                logger.info(f"Converted relative path to absolute: {file_path}")
+
             # Update status to processing
             document.processing_status = ProcessingStatus.PROCESSING
             db.commit()
@@ -77,17 +84,26 @@ class DocumentProcessor:
                 document_chunks.append(chunk)
                 db.add(chunk)
 
-            # Generate embeddings for chunks
-            try:
-                self._generate_embeddings(document_chunks, db)
-            except Exception as e:
-                logger.error(f"Failed to generate embeddings: {str(e)}")
-                # Don't fail the whole process if embeddings fail
-                logger.warning("Document processed but embeddings failed")
+            # CRITICAL: Flush to assign chunk.id before generating embeddings
+            db.flush()
+            logger.info("Chunks flushed to database, IDs assigned")
 
-            # Mark as completed
+            # Mark parsing as completed
             document.processing_status = ProcessingStatus.COMPLETED
             document.processed_date = datetime.utcnow()
+
+            # Generate embeddings for chunks (separate status tracking)
+            try:
+                document.embedding_status = ProcessingStatus.PROCESSING
+                self._generate_embeddings(document_chunks, db)
+                document.embedding_status = ProcessingStatus.COMPLETED
+                document.embedding_error_message = None
+                logger.info("Embeddings generated successfully")
+            except Exception as e:
+                logger.error(f"Failed to generate embeddings: {str(e)}")
+                document.embedding_status = ProcessingStatus.FAILED
+                document.embedding_error_message = str(e)
+                logger.warning("Document processed but embeddings failed")
 
             db.commit()
 
@@ -159,7 +175,13 @@ class DocumentProcessor:
         metadatas = []
 
         for chunk, emb_result in zip(document_chunks, embedding_results):
-            chunk_id = f"chunk_{chunk.document_id}_{chunk.chunk_index}"
+            # Deterministic ID format: doc_{document_id}_chunk_{chunk_index}
+            chunk_id = f"doc_{chunk.document_id}_chunk_{chunk.chunk_index}"
+
+            # CRITICAL: chunk.id must exist after db.flush()
+            if not chunk.id:
+                raise ValueError(f"Chunk ID not assigned for chunk {chunk.chunk_index}. DB flush may have failed.")
+
             ids.append(chunk_id)
             embeddings.append(emb_result.embedding)
             documents.append(chunk.chunk_text)
@@ -167,14 +189,14 @@ class DocumentProcessor:
                 {
                     "document_id": chunk.document_id,
                     "chunk_index": chunk.chunk_index,
-                    "chunk_id": chunk.id if chunk.id else 0,
+                    "chunk_db_id": chunk.id,  # Never 0 - will raise error if missing
                 }
             )
 
             # Store embedding ID in database
             chunk.embedding_id = chunk_id
 
-        # Add to vector store
+        # Add to vector store (will upsert if IDs exist)
         self.vector_store.add(
             ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
         )

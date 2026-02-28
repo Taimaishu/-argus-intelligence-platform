@@ -86,7 +86,6 @@ class MultiProviderChat:
                 "model": model,
                 "messages": converted_messages,
                 "max_tokens": 4096,
-                "stream": True,
             }
 
             if system_message:
@@ -119,9 +118,9 @@ class MultiProviderChat:
             if provider == "ollama":
                 model = settings.OLLAMA_LLM_MODEL
             elif provider == "openai":
-                model = "gpt-4o-mini"
+                model = "gpt-4o"  # Use GPT-4o for better analysis
             elif provider == "anthropic":
-                model = "claude-3-5-sonnet-20241022"
+                model = "claude-3-opus-20240229"  # Stable Opus model
 
         logger.info(f"Chat request - Provider: {provider}, Model: {model}")
 
